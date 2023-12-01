@@ -2,10 +2,10 @@ import os
 import re
 import torch
 import argparse
-from eval_whisper import (eval_mms,
-                          eval_whisper_huggingface,
-                          eval_faster_whisper,
-                          eval_whisper_openai)
+from eval.eval_whisper import (eval_mms,
+                               eval_whisper_huggingface,
+                               eval_faster_whisper,
+                               eval_whisper_openai)
 
 
 model_name_list = ['whisper-large-v3',
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_index', '-mi', help='index of model list', type=int)
     parser.add_argument('--dataset_dir', '-dd', help='dataset root directory', type=str)
     parser.add_argument('--data_index', '-di', help='index of dataset list', type=int)
-    parser.add_argument('--export_dir', '-ed', help='export directory of result', type=int)
+    parser.add_argument('--export_dir', '-ed', help='export directory of result', type=str)
     parser.add_argument('--language', '-l', help='whisper inference language', type=str)
     parser.add_argument('--batch_size', '-b', help='batch size', type=int)
     parser.add_argument('--gpu', '-g', default=0, help='gpu id', type=str)

@@ -1,4 +1,4 @@
-python -m eval.eval_whisper \
+python -m eval.eval \
        --model_dir /data1/yumingdong/model/ \
        --model_type huggingface \
        --model_index 0 \
