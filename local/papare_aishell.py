@@ -1,7 +1,32 @@
 import os
+import sys
 import soundfile
 from tqdm import tqdm
 from typing import List, Dict
+
+'''
+将aishell数据集转换为wav.scp, text格式
+'''
+
+
+def main():
+    root_dir = sys.argv[1]    # Path of 'data_aishell' directory
+    export_dir = sys.argv[2]  # export_dir/wav.scp|text
+
+    split = ['train', 'dev', 'test']
+    with open(os.path.join(root_dir, 'transcript', 'aishell_transcript_v0.8.txt'), 'r') as f:
+        file = f.readlines()
+
+    # {audio id:transcription}
+    idx_text = {}
+    for line in file:
+        s = line.strip().split(' ')
+        idx = s[0]
+        trans = ''.join(s[1:])
+        idx_text[idx] = trans
+
+    for n in split:
+        save_split_wav_text(root_dir, n, export_dir, idx_text)
 
 
 def save_split_wav_text(root_dir: str, split: str, export_dir: str, idx_text: Dict) -> None:
@@ -32,35 +57,18 @@ def save_split_wav_text(root_dir: str, split: str, export_dir: str, idx_text: Di
     text_export_path = os.path.join(export_dir, 'text')
     os.makedirs(export_dir, exist_ok=True)
 
-    with open(wav_export_path, 'w') as f:
-        for item in wav:
-            f.write(item + '\n')
+    save_file(wav_export_path, wav)
+    save_file(text_export_path, text)
 
-    with open(text_export_path, 'w') as f:
-        for item in text:
+
+def save_file(export_path: str, file: List) -> None:
+    with open(export_path, 'w') as f:
+        for item in file:
             f.write(item + '\n')
 
 
 if __name__ == '__main__':
-    root_dir = '/data2/yumingdong/wavs/data_aishell/data_aishell/'
-    export_dir = '/data2/yumingdong/data/aishell'
-    split = ['train', 'dev', 'test']
-
-    with open(os.path.join(root_dir, 'transcript', 'aishell_transcript_v0.8.txt'), 'r') as f:
-        file = f.readlines()
-
-    wav = []
-    text = []
-
-    idx_text = {}
-    for line in file:
-        s = line.strip().split(' ')
-        idx = s[0]
-        trans = ''.join(s[1:])
-        idx_text[idx] = trans
-
-    for n in split:
-        save_split_wav_text(root_dir, n, export_dir, idx_text)
+    main()
 
 
 

@@ -1,17 +1,21 @@
 import os
+import sys
 from typing import List
+
+'''
+修改wav.scp中的音频目录
+'''
 
 
 def main():
-    name = 'mandarin_700h'
-    root_dir = f'/data2/yumingdong/data/{name}'  # root dir -> wav.scp text text.fmt
-    export_dir = f'/data2/yumingdong/data/{name}'
-    data_tgt_dir = f'/data2/yumingdong/wavs/{name}'
+    root_dir = sys.argv[1]  # root dir/wav.scp|text|text.fmt
+    export_dir = sys.argv[2]  # -> export_dir/wav.scp
+    data_tgt_dir = sys.argv[3]  # data_tgt_dir/1.wav, ..., x.wav
 
     generate(root_dir, export_dir, data_tgt_dir)
 
 
-def generate(root_dir: str, export_dir: str, data_tgt_dir: str):
+def generate(root_dir: str, export_dir: str, data_tgt_dir: str) -> None:
     os.makedirs(export_dir, exist_ok=True)
 
     with open(os.path.join(root_dir, 'wav.scp'), 'r') as f:
@@ -28,7 +32,7 @@ def generate(root_dir: str, export_dir: str, data_tgt_dir: str):
     generate_wav(origin_wav, export_dir)
 
 
-def generate_wav(wav: List, export: str):
+def generate_wav(wav: List, export: str) -> None:
     with open(os.path.join(export, 'wav.scp'), 'w') as file:
         for item in wav:
             file.write(item + '\n')
