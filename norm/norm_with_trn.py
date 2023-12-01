@@ -7,6 +7,13 @@ from tqdm import tqdm
 from norm.num2char import num_to_char
 from utils.get_save_file import get_file, save_file
 
+'''
+
+标准化测试输出的reg_orig.trn和std_orig.trn
+包括[删除特殊符号, 中文字符简体转繁体, 英文字母大写转小写, 阿拉伯数字转为中文数字]
+输出结果为同一目录下的reg.trn和std.trn
+
+'''
 
 def norm_single_sentence(sentence: str) -> str:
     converter = opencc.OpenCC('s2t.json')
