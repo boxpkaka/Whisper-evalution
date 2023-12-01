@@ -2,7 +2,8 @@ import os
 import sys
 import soundfile
 from tqdm import tqdm
-from typing import List, Dict
+from typing import Dict
+from utils.get_save_file import get_file, save_file
 
 '''
 将aishell数据集转换为wav.scp, text格式
@@ -14,8 +15,7 @@ def main():
     export_dir = sys.argv[2]  # export_dir/wav.scp|text
 
     split = ['train', 'dev', 'test']
-    with open(os.path.join(root_dir, 'transcript', 'aishell_transcript_v0.8.txt'), 'r') as f:
-        file = f.readlines()
+    file = get_file(os.path.join(root_dir, 'transcript', 'aishell_transcript_v0.8.txt'))
 
     # {audio id:transcription}
     idx_text = {}
@@ -39,7 +39,7 @@ def save_split_wav_text(root_dir: str, split: str, export_dir: str, idx_text: Di
         audio_dir = os.path.join(audio_root_dir, n)
         audio_list = os.listdir(audio_dir)
 
-        for audio_name in audio_list:
+        for audio_name in tqdm(audio_list):
             idx = audio_name[:-4]
             if idx_text.get(idx) is not None:
                 audio_path = os.path.join(audio_dir, audio_name)
@@ -59,12 +59,6 @@ def save_split_wav_text(root_dir: str, split: str, export_dir: str, idx_text: Di
 
     save_file(wav_export_path, wav)
     save_file(text_export_path, text)
-
-
-def save_file(export_path: str, file: List) -> None:
-    with open(export_path, 'w') as f:
-        for item in file:
-            f.write(item + '\n')
 
 
 if __name__ == '__main__':

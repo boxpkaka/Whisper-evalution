@@ -1,6 +1,7 @@
 import os
 import sys
 from typing import List
+from utils.get_save_file import get_file, save_file
 
 '''
 将LibriSpeech数据集转换为wav.scp, text格式
@@ -20,19 +21,15 @@ def main():
 
     # generate the train-960 wav.scp and text
     os.makedirs(os.path.join(export_dir, 'train-960'), exist_ok=True)
-    wav = ''
-    text = ''
+    wav = []
+    text = []
 
     for i in range(3):
-        with open(os.path.join(export_dir, split[i], 'wav.scp'), 'r') as temp:
-            wav += (temp.read().strip() + '\n')
-        with open(os.path.join(export_dir, split[i], 'text'), 'r') as temp:
-            text += (temp.read().strip() + '\n')
+        wav.extend(get_file(os.path.join(export_dir, split[i], 'wav.scp')))
+        text.extend(get_file(os.path.join(export_dir, split[i], 'text')))
 
-    with open(os.path.join(export_dir, 'train-960', 'wav.scp'), 'w') as file:
-        file.write(wav.strip())
-    with open(os.path.join(export_dir, 'train-960', 'text'), 'w') as file:
-        file.write(text.strip())
+    save_file(os.path.join(export_dir, 'train-960', 'wav.scp'), wav)
+    save_file(os.path.join(export_dir, 'train-960', 'text'), text)
 
 
 def generate(data_dir: str, export_dir: str, split: str) -> None:
@@ -50,23 +47,10 @@ def generate(data_dir: str, export_dir: str, split: str) -> None:
                 if i[-4:] == 'flac':
                     wav.append(i[:-5] + ' ' + os.path.join(dir, i))
                 else:
-                    generate_text(text_dir=os.path.join(dir, i), export=export)
+                    text = get_file(os.path.join(dir, i))
+                    save_file(export, text)
 
-    generate_wav(wav, export)
-
-
-def generate_wav(wav: List, export: str) -> None:
-    with open(os.path.join(export, 'wav.scp'), 'w') as file:
-        for item in wav:
-            file.write(item + '\n')
-
-
-def generate_text(text_dir: str, export: str) -> None:
-    with open(text_dir, 'r') as file:
-        text = file.read()
-
-    with open(os.path.join(export, 'text'), 'a') as file:
-        file.write(text)
+    save_file(os.path.join(export, 'wav.scp'), wav)
 
 
 if __name__ == '__main__':
