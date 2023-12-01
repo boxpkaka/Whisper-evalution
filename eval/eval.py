@@ -8,26 +8,28 @@ from eval_whisper import (eval_mms,
                           eval_whisper_openai)
 
 
-def eval_whisper(model_index: int, model_type: str, data_index: int, language: str, batch_size: int, gpu: str):
-    model_name_list = ['whisper-large-v3',
-                       'whisper-large-v3-lora500-final',
-                       'whisper-large-v3-lora50-14000',
-                       'whisper-large-v3-lora50-14000-attn-yue',
-                       'whisper-large-v3-lora50-14000-attn-none',
-                       'whisper-large-v3-lora50+50-14000-attn-none']
+model_name_list = ['whisper-large-v3',
+                   'whisper-large-v3-lora500-final',
+                   'whisper-large-v3-lora50-14000',
+                   'whisper-large-v3-lora50-14000-attn-yue',
+                   'whisper-large-v3-lora50-14000-attn-none',
+                   'whisper-large-v3-lora50+50-14000-attn-none']
 
-    dataset_list = ['test_1000Cantonese',
-                    'test_datatang500h',
-                    'test_magicdatacantonese',
-                    'test_commonvoicecantonese',
-                    'test_kejiyuan',
-                    'test_hk_can',
-                    'dev_mandarin_2h',
-                    'aishell/test']
+dataset_list = ['test_1000Cantonese',
+                'test_datatang500h',
+                'test_magicdatacantonese',
+                'test_commonvoicecantonese',
+                'test_kejiyuan',
+                'test_hk_can',
+                'dev_mandarin_2h',
+                'aishell/test']
 
-    model_dir = os.path.join('/data1/yumingdong/model/', model_type)
-    dataset_dir = '/data2/yumingdong/data'
-    export_root_dir = '/data1/yumingdong/whisper/whisper-eval/exp/'
+
+def eval_whisper(model_dir: str, model_type: str, model_index: int,
+                 dataset_dir: str, data_index: int,
+                 export_dir: str,
+                 language: str, batch_size: int, gpu: str):
+    model_dir = os.path.join(model_dir, model_type)
 
     model_name = model_name_list[model_index]
     model_path = os.path.join(model_dir, model_name)
@@ -35,7 +37,7 @@ def eval_whisper(model_index: int, model_type: str, data_index: int, language: s
     dataset_dir = os.path.join(dataset_dir, dataset_list[data_index])
 
     export_postfix = dataset_dir.split('/')[-1] if data_index != 6 else 'test_aishell'
-    export_dir = os.path.join(export_root_dir, model_name + '-' + export_postfix)
+    export_dir = os.path.join(export_dir, model_name + '-' + export_postfix)
 
     device = torch.device(f'cuda:{gpu}')
 
@@ -58,19 +60,25 @@ def eval_whisper(model_index: int, model_type: str, data_index: int, language: s
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='eval whisper')
-    parser.add_argument('--model_index', '-mi', help='index of model list', type=int)
+    parser.add_argument('--model_dir', '-md', help='model root directory', type=str)
     parser.add_argument('--model_type', '-mt', help='type of model',
                         choices=['huggingface', 'finetuned', 'openai_whisper', 'wenet_whisper'],
                         type=str)
+    parser.add_argument('--model_index', '-mi', help='index of model list', type=int)
+    parser.add_argument('--dataset_dir', '-dd', help='dataset root directory', type=str)
     parser.add_argument('--data_index', '-di', help='index of dataset list', type=int)
-    parser.add_argument('--language', '-l', help='language', type=str)
+    parser.add_argument('--export_dir', '-ed', help='export directory of result', type=int)
+    parser.add_argument('--language', '-l', help='whisper inference language', type=str)
     parser.add_argument('--batch_size', '-b', help='batch size', type=int)
     parser.add_argument('--gpu', '-g', default=0, help='gpu id', type=str)
     args = parser.parse_args()
 
-    eval_whisper(model_index=args.model_index,
+    eval_whisper(model_dir=args.model_dir,
                  model_type=args.model_type,
+                 model_index=args.model_index,
+                 dataset_dir=args.dataset_dir,
                  data_index=args.data_index,
+                 export_dir=args.export_dir,
                  language=args.language,
                  batch_size=args.batch_size,
                  gpu=args.gpu)
