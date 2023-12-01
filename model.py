@@ -82,10 +82,6 @@ class MSS(nn.Module):
         return logits, trans
 
 
-def count_model(model):
-    return sum(p.numel() for p in model.parameters())
-
-
 if __name__ == "__main__":
     root_dir = '/data1/yumingdong/pretrain_model'
     model_name = ['wav2vec2-large-960h-lv60',
@@ -106,11 +102,4 @@ if __name__ == "__main__":
     device = torch.device("cuda:0")
     model = WhisperModel(model_path[12])
     print(model)
-    # param = count_model(model)
-    # print(param / 1e6)
-    # inputs, sr = librosa.load('/data1/yumingdong/data/test_1000Cantonese/1000Cantonese00000668-0000000-0002964-S.wav')
-    # inputs = librosa.resample(inputs, orig_sr=sr, target_sr=16000)
-    # text = torch.full((2, 230), 4).to(device)
-    # output, text = model(inputs)
-    # print(output.shape, text)
 

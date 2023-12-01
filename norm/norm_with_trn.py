@@ -1,16 +1,11 @@
 import os
+import re
+import opencc
 import multiprocessing
 from typing import List
-import opencc
 from tqdm import tqdm
-import re
 from norm.num2char import num_to_char
-
-
-def get_file(path: str) -> List:
-    with open(path, 'r') as f:
-        file = f.readlines()
-    return file
+from utils.get_save_file import get_file, save_file
 
 
 def norm_single_sentence(sentence: str) -> str:
@@ -64,13 +59,8 @@ def normalize_cantonese(path: str) -> None:
     final_trans = [item for sublist, _ in results for item in sublist]
     final_refs = [item for _, sublist in results for item in sublist]
 
-    with open(os.path.join(path, 'reg.trn'), 'w') as file:
-        for i in final_trans:
-            file.write(i + '\n')
-
-    with open(os.path.join(path, 'std.trn'), 'w') as file:
-        for i in final_refs:
-            file.write(i + '\n')
+    save_file(os.path.join(path, 'reg.trn'), final_trans)
+    save_file(os.path.join(path, 'std.trn'), final_refs)
 
     print(path + ' done!')
 
