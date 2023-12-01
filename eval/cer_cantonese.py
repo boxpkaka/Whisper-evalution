@@ -3,7 +3,8 @@ from typing import List
 import opencc
 from jiwer import cer
 import re
-from eval.num2char import num_to_char
+from norm.num2char import num_to_char
+
 
 def get_file(path: str) -> List:
     with open(path, 'r') as f:
