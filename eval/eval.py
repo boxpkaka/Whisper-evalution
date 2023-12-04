@@ -13,7 +13,8 @@ model_name_list = ['whisper-large-v3',
                    'whisper-large-v3-lora50-14000',
                    'whisper-large-v3-lora50-14000-attn-yue',
                    'whisper-large-v3-lora50-14000-attn-none',
-                   'whisper-large-v3-lora50+50-14000-attn-none']
+                   'whisper-large-v3-lora50+50-14000-attn-none',
+                   'whisper-large-v3-lora50+50-final-attn-none']
 
 dataset_list = ['test_1000Cantonese',
                 'test_datatang500h',
@@ -36,7 +37,8 @@ def eval_whisper(model_dir: str, model_type: str, model_index: int,
 
     dataset_dir = os.path.join(dataset_dir, dataset_list[data_index])
 
-    export_postfix = dataset_dir.split('/')[-1] if data_index != 6 else 'test_aishell'
+    export_postfix = dataset_dir.split('/')[-1].replace('/', '-')
+
     export_dir = os.path.join(export_dir, model_name + '-' + export_postfix)
 
     device = torch.device(f'cuda:{gpu}')

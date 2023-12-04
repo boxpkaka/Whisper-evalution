@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from transformers import WhisperProcessor
 
 
-def get_dataloader(audio_path: str, processor: WhisperProcessor, batch_size: int, shuffle: bool, type: str):
+def get_dataloader(audio_path: str, processor: None, batch_size: int, shuffle: bool, type: str):
     print(f'dataloader: {type}')
     if type == 'whisper_openai' or type == 'whisper_faster':
         dataset = DataLoaderWhisperOpenai(audio_path)

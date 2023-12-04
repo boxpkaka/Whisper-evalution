@@ -28,14 +28,16 @@ def load_whisper(path: str):
     return whisper, whisper_processor
 
 
-def save2export(export_dir, refs, trans):
+def save_eval(export_dir, refs, trans):
     os.makedirs(export_dir, exist_ok=True)
     save_file(os.path.join(export_dir, 'std_orig.trn'), refs)
     save_file(os.path.join(export_dir, 'reg_orig.trn'), trans)
+    normalize_cantonese(export_dir)
+    eval_with_trn(export_dir)
 
 
 def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, language: str, device: torch.device):
-    dataloader = get_dataloader(audio_path=dataset_dir, batch_size=1, shuffle=False, type='whisper_openai')
+    dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_openai')
     model = whisper.load_model(os.path.join(model_path, 'model.pt'), device=device)
     param = count_model(model)
     print(param)
@@ -51,14 +53,12 @@ def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, lang
         refs.append(f'{ref} ({idx})')
         trans.append(f'{transcription} ({idx})')
 
-    save2export(export_dir, refs, trans)
-    normalize_cantonese(export_dir)
-    eval_with_trn(export_dir)
+    save_eval(export_dir, refs, trans)
 
 
 def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str, device: torch.device):
     model = WhisperModel(model_path, device='cuda', compute_type="int8_float16", device_index=7, num_workers=8)
-    dataloader = get_dataloader(audio_path=dataset_dir, batch_size=1, shuffle=False, type='whisper_faster')
+    dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_faster')
     # param = count_model(model)
     # print(param)
     count = 0
@@ -83,9 +83,7 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
         count += 1
     end = time.time()
     print(f'Inference time: {end - start}s')
-    save2export(export_dir, refs, trans)
-    normalize_cantonese(export_dir)
-    eval_with_trn(export_dir)
+    save_eval(export_dir, refs, trans)
 
 
 def eval_mms(model_path: str, dataset_dir: str, export_dir: str, device: torch.device):
@@ -94,7 +92,7 @@ def eval_mms(model_path: str, dataset_dir: str, export_dir: str, device: torch.d
 
     model.config.forced_decoder_ids = None
     print('param:    ', count_model(model))
-    dataloader = get_dataloader(dataset_dir, 1, False, type='whisper_huggingface')
+    dataloader = get_dataloader(dataset_dir, None, 1, False, type='whisper_huggingface')
 
     count = 1
     refs = []
@@ -118,16 +116,14 @@ def eval_mms(model_path: str, dataset_dir: str, export_dir: str, device: torch.d
         print('mms:       ', transcription)
         count += 1
 
-    save2export(export_dir, refs, trans)
-    normalize_cantonese(export_dir)
-    eval_with_trn(export_dir)
+    save_eval(export_dir, refs, trans)
 
 
 def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                              batch_size: int, language: str, device: torch.device):
     model, processor = load_whisper(model_path)
     print('param:    ', count_model(model))
-    dataloader = get_dataloader(dataset_dir, processor, batch_size, False, type='whisper_huggingface')
+    dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='whisper_huggingface')
     print('=' * 100)
 
     refs = []
@@ -148,7 +144,5 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                     refs.append(f'{ref[i]} ({idx[i]})')
                     trans.append(f'{transcription[i]} ({idx[i]})')
 
-    save2export(export_dir, refs, trans)
-    normalize_cantonese(export_dir)
-    eval_with_trn(export_dir)
+    save_eval(export_dir, refs, trans)
 
