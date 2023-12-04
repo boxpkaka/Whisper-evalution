@@ -6,24 +6,7 @@ from eval.eval_whisper import (eval_mms,
                                eval_whisper_huggingface,
                                eval_faster_whisper,
                                eval_whisper_openai)
-
-
-model_name_list = ['whisper-large-v3',
-                   'whisper-large-v3-lora500-final',
-                   'whisper-large-v3-lora50-14000',
-                   'whisper-large-v3-lora50-14000-attn-yue',
-                   'whisper-large-v3-lora50-14000-attn-none',
-                   'whisper-large-v3-lora50+50-14000-attn-none',
-                   'whisper-large-v3-lora50+50-final-attn-none']
-
-dataset_list = ['test_1000Cantonese',
-                'test_datatang500h',
-                'test_magicdatacantonese',
-                'test_commonvoicecantonese',
-                'test_kejiyuan',
-                'test_hk_can',
-                'dev_mandarin_2h',
-                'aishell/test']
+from eval.model_data_list import model_name_list, dataset_list
 
 
 def eval_whisper(model_dir: str, model_type: str, model_index: int,
@@ -37,7 +20,11 @@ def eval_whisper(model_dir: str, model_type: str, model_index: int,
 
     dataset_dir = os.path.join(dataset_dir, dataset_list[data_index])
 
-    export_postfix = dataset_dir.split('/')[-1].replace('/', '-')
+    # Create name of save directory
+    export_postfix = dataset_dir.split('/')[-1]
+    if dataset_dir.split('/')[-1] in ['train', 'dev', 'test']:
+        export_postfix, split = dataset_dir.split('/')[-2:]
+        export_postfix = f'{split}-{export_postfix}'
 
     export_dir = os.path.join(export_dir, model_name + '-' + export_postfix)
 
