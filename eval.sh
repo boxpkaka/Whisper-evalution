@@ -3,8 +3,8 @@ python -m eval.eval \
        --model_type finetuned \
        --model_index 1 \
        --dataset_dir /data2/yumingdong/data \
-       --data_index 7 \
+       --data_index 8 \
        --export_dir /data1/yumingdong/whisper/whisper-eval/exp \
        --batch_size 16 \
        --language zh \
-       --gpu 1
+       --gpu 0
