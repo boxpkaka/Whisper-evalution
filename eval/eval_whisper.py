@@ -1,14 +1,11 @@
 import torch
 import whisper
 import os
-import time
 import pynvml
 import psutil
 from tqdm import tqdm
-from transformers import (
-    WhisperProcessor,
-    WhisperForConditionalGeneration
-)
+from typing import List
+from transformers import WhisperProcessor,WhisperForConditionalGeneration
 from transformers import MCTCTForCTC, MCTCTProcessor
 from faster_whisper import WhisperModel
 from dataloader import get_dataloader
@@ -40,6 +37,21 @@ def save_eval(export_dir, refs, trans, trans_with_time=None):
     eval_with_trn(export_dir)
 
 
+def get_usage_info(total_cost_time: float, total_audio_time: float,
+                   memory: List, max_cpu_usage: float,
+                   trans_with_info: List) -> None:
+    rtf = round(total_cost_time / total_audio_time, 3)
+    memory_max = max(memory)
+    memory_avg = sum(memory) / len(memory)
+
+    trans_with_info.append(f'total cost time: {total_cost_time}s')
+    trans_with_info.append(f'RTF:             {rtf}')
+    trans_with_info.append(f'Throughput:      {round(1/rtf, 3)}')
+    trans_with_info.append(f'Avg memory:      {memory_avg}')
+    trans_with_info.append(f'Max memory:      {memory_max}')
+    trans_with_info.append(f'Max cpu usage:   {max_cpu_usage}')
+
+
 def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, language: str, device: torch.device):
     dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_openai')
     model = whisper.load_model(os.path.join(model_path, 'model.pt'), device=device)
@@ -60,33 +72,69 @@ def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, lang
     save_eval(export_dir, refs, trans)
 
 
-def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str, device: torch.device):
-    model = WhisperModel(model_path, device='cuda', compute_type="int8_float16", device_index=7, num_workers=8)
+def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str,
+                        use_cpu: bool, int8: bool, num_workers: int,
+                        device: torch.device):
+    if use_cpu:
+        device = 'cpu'
+        compute_type = 'int8'
+        device_index = None
+    else:
+        device = 'cuda'
+        device_index = device.index
+        if int8:
+            compute_type = 'int8_float16'
+        else:
+            compute_type = 'float16'
+    print(type(device_index))
+    print(use_cpu)
+    model = WhisperModel(model_path, device=device,
+                         compute_type=compute_type, device_index=device_index, num_workers=num_workers)
+
     dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_faster')
-    # param = count_model(model)
-    # print(param)
-    count = 0
+
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
+
     refs = []
     trans = []
-    start = time.time()
-    for batch in dataloader:
-        data_path, ref, idx = batch
-        data_path = data_path[0]
-        ref = ref[0]
-        idx = idx[0]
-        segments, info = model.transcribe(audio=data_path, language=language)
-        for segment in segments:
-            transcription = segment.text
+    memory = []
+    trans_with_info = []
 
-        print(str(count) + '/' + str(len(dataloader)))
-        print('reference: ', ref)
-        print('whisper:   ', transcription)
+    total_cost_time = 0
+    total_audio_time = 0
+    max_cpu_usage = 0
+
+    for batch in tqdm(dataloader):
+        with CountTime(handle) as ct:
+            data_path, ref, idx = batch
+            data_path = data_path[0]
+            ref = ref[0]
+            idx = idx[0]
+            segments, info = model.transcribe(audio=data_path, language=language)
+            for segment in segments:
+                transcription = segment.text
+
+        cost_time = ct.cost_time
+        memory = ct.cost_memory
+        memory_used = ct.cost_memory
+
+        total_cost_time += cost_time
+        memory.append(memory_used)
+
+        cpu_usage = psutil.cpu_percent(interval=1)
+        max_cpu_usage = max(cpu_usage, max_cpu_usage)
+
 
         refs.append(f'{ref} ({idx})')
         trans.append(f'{transcription} ({idx})')
-        count += 1
-    end = time.time()
-    print(f'Inference time: {end - start}s')
+        trans_with_info.append(f'{transcription} ({idx})'
+                               f'batch-info: cost time: {cost_time} '
+                               f'used memory: {memory_used} '
+                               f'cpu usage: {cpu_usage}')
+
+    get_usage_info(total_cost_time, total_audio_time, memory, max_cpu_usage, trans_with_info)
+    export_dir += f'-{device}-{compute_type}'
     save_eval(export_dir, refs, trans)
 
 
@@ -175,15 +223,6 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                     else:
                         trans_with_info.append(f'{transcription[i]} ({idx[i]})')
 
-    rtf = round(total_cost_time / total_audio_time, 3)
-    memory_max = max(memory)
-    memory_avg = sum(memory) / len(memory)
-
-    trans_with_info.append(f'total cost time: {total_cost_time}s')
-    trans_with_info.append(f'RTF:             {rtf}')
-    trans_with_info.append(f'Throughput:      {round(1/rtf, 3)}')
-    trans_with_info.append(f'Avg memory:      {memory_avg}')
-    trans_with_info.append(f'Max memory:      {memory_max}')
-    trans_with_info.append(f'Max cpu usage:   {max_cpu_usage}')
+    get_usage_info(total_cost_time, total_audio_time, memory, max_cpu_usage, trans_with_info)
     save_eval(export_dir, refs, trans, trans_with_info)
 

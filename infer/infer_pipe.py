@@ -5,6 +5,7 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, AutoModelForCausalLM
 from utils.get_save_file import get_file
 from utils.count_time import CountTime
+from utils.get_audio_duration import get_duration_from_idx
 
 
 def get_pipeline(args) -> pipeline:
@@ -17,11 +18,14 @@ def get_pipeline(args) -> pipeline:
 
     # 获取模型
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        args.model_path, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True,
+        args.model_path, torch_dtype=torch_dtype, low_cpu_mem_usage=False, use_safetensors=True,
         use_flash_attention_2=args.use_flash_attention_2
     )
+    print(args.use_bettertransformer, args.use_flash_attention_2)
     if args.use_bettertransformer and not args.use_flash_attention_2:
+        print('use bettertransformer')
         model = model.to_bettertransformer()
+
     # 使用Pytorch2.0的编译器
     if args.use_compile:
         if torch.__version__ >= "2" and platform.system().lower() != 'windows':
@@ -70,8 +74,13 @@ def infer_list(pipe: pipeline, audio_dir: str, generate_kwargs=None) -> None:
     '''
     file = get_file(os.path.join(audio_dir, 'wav.scp'))
     audio_path_list = [n.split(' ')[-1] for n in file]
+    total_time = 0
+    # for line in file:
+    #     total_time += get_duration_from_idx(line.split(' ')[0])
+    #
+    # print(total_time)
     with CountTime() as ct:
-        result = infer_pipe(audio_path_list, return_timestamps=False, generate_kwargs=generate_kwargs)
+        result = pipe(audio_path_list[:16], return_timestamps=False, generate_kwargs=generate_kwargs)
 
     cost_time = ct.cost_time
     print(cost_time)
@@ -94,13 +103,11 @@ if __name__ == "__main__":
     parser.add_argument("--assistant_model_path",  type=str,  default=None,  help="助手模型，可以提高推理速度，例如openai/whisper-tiny")
     parser.add_argument("--local_files_only",      type=bool, default=True,  help="是否只在本地加载模型，不尝试下载")
     parser.add_argument("--use_flash_attention_2", type=bool, default=False, help="是否使用FlashAttention2加速")
-    parser.add_argument("--use_bettertransformer", type=bool, default=False, help="是否使用BetterTransformer加速")
+    parser.add_argument("--use_bettertransformer", type=bool, default=True, help="是否使用BetterTransformer加速")
     args = parser.parse_args()
-    print(type(args))
 
     # 得到 pipeline
     infer_pipe = get_pipeline(args)
-
     # 推理参数
     generate_kwargs = {"task": args.task, "num_beams": args.num_beams}
     if args.language is not None:
@@ -114,5 +121,3 @@ if __name__ == "__main__":
     else:
         print('Need audio.')
 
-    # for chunk in result["chunks"]:
-    #     print(f"[{chunk['timestamp'][0]}-{chunk['timestamp'][1]}s] {chunk['text']}")

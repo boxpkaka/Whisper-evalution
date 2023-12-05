@@ -15,9 +15,10 @@ class CountTime(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         cost_time = round(time.perf_counter() - self.time, 3)
-        memory_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
+        if self.handle is not None:
+            memory_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
+            self.cost_memory = memory_info.used / 1024 ** 2
         self.cost_time = cost_time
-        self.cost_memory = memory_info.used / 1024**2
 
 
 if __name__ == '__main__':
