@@ -14,5 +14,6 @@ dataset_list = [
     'test_kejiyuan',
     'test_hk_can',
     'dev_mandarin_2h',
-    'aishell/test'
+    'aishell/test',
+    'deploy_test-cantonese'
 ]

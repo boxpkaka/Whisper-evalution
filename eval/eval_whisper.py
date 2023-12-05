@@ -2,21 +2,23 @@ import torch
 import whisper
 import os
 import time
-import re
+import pynvml
+import psutil
 from tqdm import tqdm
 from transformers import (
     WhisperProcessor,
-    WhisperForConditionalGeneration,
-    WhisperFeatureExtractor,)
+    WhisperForConditionalGeneration
+)
 from transformers import MCTCTForCTC, MCTCTProcessor
 from faster_whisper import WhisperModel
 from dataloader import get_dataloader
-from transformers import AutoTokenizer
 from eval.eval_with_trn import eval_with_trn
 from norm.norm_with_trn import normalize_cantonese
 from utils.count_model import count_model
 from utils.get_save_file import get_file, save_file
-import argparse
+from utils.count_time import CountTime
+from utils.get_audio_duration import get_duration_from_idx
+
 
 FILTER_POSTFIX = {'data': 0, 'train': 0, 'dev': 0}
 
@@ -28,10 +30,12 @@ def load_whisper(path: str):
     return whisper, whisper_processor
 
 
-def save_eval(export_dir, refs, trans):
+def save_eval(export_dir, refs, trans, trans_with_time=None):
     os.makedirs(export_dir, exist_ok=True)
     save_file(os.path.join(export_dir, 'std_orig.trn'), refs)
     save_file(os.path.join(export_dir, 'reg_orig.trn'), trans)
+    if trans_with_time is not None:
+        save_file(os.path.join(export_dir, 'reg_rtf.trn'), trans_with_time)
     normalize_cantonese(export_dir)
     eval_with_trn(export_dir)
 
@@ -126,23 +130,60 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
     dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='whisper_huggingface')
     print('=' * 100)
 
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
+
     refs = []
     trans = []
+    memory = []
+    trans_with_info = []
+
+    total_cost_time = 0
+    total_audio_time = 0
+    max_cpu_usage = 0
+
     model.to(device)
     model.eval()
-
     with torch.cuda.amp.autocast():
         with torch.no_grad():
             for batch in tqdm(dataloader):
-                input_features, ref, idx = batch
-                input_features = input_features.to(device)
 
-                predicted_ids = model.generate(input_features, task='transcribe', language=language)
-                transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
+                with CountTime(handle) as ct:
+                    input_features, ref, idx = batch
+                    input_features = input_features.to(device)
+
+                    predicted_ids = model.generate(input_features, task='transcribe', language=language)
+                    transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
+
+                cost_time = ct.cost_time
+                memory_used = ct.cost_memory
+
+                total_cost_time += cost_time
+                memory.append(memory_used)
+
+                cpu_usage = psutil.cpu_percent(interval=1)
+                max_cpu_usage = max(cpu_usage, max_cpu_usage)
 
                 for i in range(len(transcription)):
+                    total_audio_time += get_duration_from_idx(idx[i])
                     refs.append(f'{ref[i]} ({idx[i]})')
                     trans.append(f'{transcription[i]} ({idx[i]})')
+                    if i == 0:
+                        trans_with_info.append(f'batch-info: cost time: {cost_time} used memory: {memory_used} '
+                                               f'cpu usage: {cpu_usage}')
+                        trans_with_info.append(f'{transcription[i]} ({idx[i]}) ')
+                    else:
+                        trans_with_info.append(f'{transcription[i]} ({idx[i]})')
 
-    save_eval(export_dir, refs, trans)
+    rtf = round(total_cost_time / total_audio_time, 3)
+    memory_max = max(memory)
+    memory_avg = sum(memory) / len(memory)
+
+    trans_with_info.append(f'total cost time: {total_cost_time}s')
+    trans_with_info.append(f'RTF:             {rtf}')
+    trans_with_info.append(f'Throughput:      {round(1/rtf, 3)}')
+    trans_with_info.append(f'Avg memory:      {memory_avg}')
+    trans_with_info.append(f'Max memory:      {memory_max}')
+    trans_with_info.append(f'Max cpu usage:   {max_cpu_usage}')
+    save_eval(export_dir, refs, trans, trans_with_info)
 

@@ -50,9 +50,7 @@ def eval_whisper(model_dir: str, model_type: str, model_index: int,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='eval whisper')
     parser.add_argument('--model_dir', '-md', help='model root directory', type=str)
-    parser.add_argument('--model_type', '-mt', help='type of model',
-                        choices=['huggingface', 'finetuned', 'openai_whisper', 'wenet_whisper'],
-                        type=str)
+    parser.add_argument('--model_type', '-mt', help='type of model', type=str)
     parser.add_argument('--model_index', '-mi', help='index of model list', type=int)
     parser.add_argument('--dataset_dir', '-dd', help='dataset root directory', type=str)
     parser.add_argument('--data_index', '-di', help='index of dataset list', type=int)
