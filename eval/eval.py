@@ -49,15 +49,15 @@ def eval_whisper(model_dir: str, model_type: str, model_index: int,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='eval whisper')
-    parser.add_argument('--model_dir', '-md', help='model root directory', type=str)
-    parser.add_argument('--model_type', '-mt', help='type of model', type=str)
-    parser.add_argument('--model_index', '-mi', help='index of model list', type=int)
-    parser.add_argument('--dataset_dir', '-dd', help='dataset root directory', type=str)
-    parser.add_argument('--data_index', '-di', help='index of dataset list', type=int)
-    parser.add_argument('--export_dir', '-ed', help='export directory of result', type=str)
-    parser.add_argument('--language', '-l', help='whisper inference language', type=str)
-    parser.add_argument('--batch_size', '-b', help='batch size', type=int)
-    parser.add_argument('--gpu', '-g', default=0, help='gpu id', type=str)
+    parser.add_argument('--model_dir',   '-md', help='model root directory',       type=str)
+    parser.add_argument('--model_type',  '-mt', help='type of model',              type=str)
+    parser.add_argument('--model_index', '-mi', help='index of model list',        type=int)
+    parser.add_argument('--dataset_dir', '-dd', help='dataset root directory',     type=str)
+    parser.add_argument('--data_index',  '-di', help='index of dataset list',      type=int)
+    parser.add_argument('--export_dir',  '-ed', help='export directory of result', type=str)
+    parser.add_argument('--language',    '-l',  help='whisper inference language', type=str)
+    parser.add_argument('--batch_size',  '-b',  help='batch size',                 type=int)
+    parser.add_argument('--gpu',         '-g',  default=0, help='gpu id',          type=str)
     args = parser.parse_args()
 
     eval_whisper(model_dir=args.model_dir,
