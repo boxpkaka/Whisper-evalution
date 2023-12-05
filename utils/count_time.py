@@ -3,7 +3,7 @@ import pynvml
 
 
 class CountTime(object):
-    def __init__(self, handle):
+    def __init__(self, handle=None):
         self.time = 0
         self.cost_time = 0
         self.cost_memory = 0
