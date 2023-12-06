@@ -1,11 +1,6 @@
-import os
 import re
-import torch
 import argparse
-from eval.eval_whisper import (eval_mms,
-                               eval_whisper_huggingface,
-                               eval_faster_whisper,
-                               eval_whisper_openai)
+from eval.eval_whisper import *
 from eval.model_data_list import model_name_list, dataset_list
 
 
@@ -28,12 +23,13 @@ def eval_whisper(args):
     device = torch.device(f'cuda:{args.gpu}')
 
     print('=' * 100)
-    print('model:    ', model_name)
-    print('language: ', args.language)
-    print('test set: ', dataset_list[args.data_index])
-    print('export:   ', export_dir)
-    print('gpu:      ', args.gpu)
-    print('use int8: ', args.int8)
+    print('model:    ',   model_name)
+    print('language: ',   args.language)
+    print('test set: ',   dataset_list[args.data_index])
+    print('export:   ',   export_dir)
+    print('gpu:      ',   args.gpu)
+    print('batch size: ', args.batch_size)
+    print('use int8: ',   args.int8)
 
     if re.match('openai', model_name) is not None:
         eval_whisper_openai(model_path, dataset_dir, export_dir, args.language, device)
@@ -42,6 +38,8 @@ def eval_whisper(args):
                             args.use_cpu, args.int8, args.num_workers, device)
     elif re.match('m-ctc', model_name) is not None:
         eval_mms(model_path, dataset_dir, export_dir, device)
+    elif args.pipeline:
+        eval_whisper_pipeline(model_path, dataset_dir, export_dir, args.batch_size, args.language, device)
     else:
         eval_whisper_huggingface(model_path, dataset_dir, export_dir, args.batch_size, args.language, device)
 
@@ -59,6 +57,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_cpu', default=False, help='use cpu of ct2model',        type=bool)
     parser.add_argument('--int8',                   help='ues int8 of ct2model',       type=bool)
     parser.add_argument('--num_workers',            help='workers nums of ct2model',   type=int)
+    parser.add_argument('--pipeline',               help='use transformers pipeline',  type=bool)
     parser.add_argument('--gpu',     default=0,     help='gpu id',                     type=str)
     args = parser.parse_args()
 

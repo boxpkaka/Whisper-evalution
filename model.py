@@ -9,7 +9,6 @@ from transformers import (HubertForCTC,
                           Data2VecAudioForCTC)
 from transformers import WhisperProcessor, WhisperModel, WhisperFeatureExtractor, WhisperForConditionalGeneration
 from transformers import MCTCTForCTC, MCTCTProcessor
-from faster_whisper import WhisperModel
 
 
 class HuBERT(nn.Module):
@@ -80,26 +79,3 @@ class MSS(nn.Module):
         predicted_ids = torch.argmax(logits, dim=-1)
         trans = self.processor.batch_decode(predicted_ids)
         return logits, trans
-
-
-if __name__ == "__main__":
-    root_dir = '/data1/yumingdong/pretrain_model'
-    model_name = ['wav2vec2-large-960h-lv60',
-                  'hubert-base-ls960',
-                  'hubert-large-ls960-ft',
-                  'wavlm-base-plus',
-                  'data2vec-audio-base-960h',
-                  'data2vec-audio-large-960h',
-                  'distil-large-v2',
-                  'distil-medium.en',
-                  'whisper-small',
-                  'whisper-medium',
-                  'whisper-large-v2',
-                  'faster-whisper-large-v2',
-                  'faster-whisper-medium',
-                  'm-ctc-t-large']
-    model_path = [os.path.join(root_dir, n) for n in model_name]
-    device = torch.device("cuda:0")
-    model = WhisperModel(model_path[12])
-    print(model)
-

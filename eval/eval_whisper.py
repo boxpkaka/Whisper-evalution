@@ -5,26 +5,16 @@ import pynvml
 import psutil
 from tqdm import tqdm
 from typing import List
-from transformers import WhisperProcessor,WhisperForConditionalGeneration
-from transformers import MCTCTForCTC, MCTCTProcessor
+from transformers import MCTCTForCTC, MCTCTProcessor, WhisperProcessor
 from faster_whisper import WhisperModel
 from dataloader import get_dataloader
 from eval.eval_with_trn import eval_with_trn
 from norm.norm_with_trn import normalize_cantonese
 from utils.count_model import count_model
-from utils.get_save_file import get_file, save_file
+from utils.get_save_file import save_file
 from utils.count_time import CountTime
 from utils.get_audio_duration import get_duration_from_idx
-
-
-FILTER_POSTFIX = {'data': 0, 'train': 0, 'dev': 0}
-
-
-def load_whisper(path: str):
-    whisper = WhisperForConditionalGeneration.from_pretrained(path)
-    whisper_processor = WhisperProcessor.from_pretrained(path)
-
-    return whisper, whisper_processor
+from utils.get_model import get_pipeline, load_whisper
 
 
 def save_eval(export_dir, refs, trans, trans_with_time=None):
@@ -217,7 +207,8 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                     refs.append(f'{ref[i]} ({idx[i]})')
                     trans.append(f'{transcription[i]} ({idx[i]})')
                     if i == 0:
-                        trans_with_info.append(f'batch-info: cost time: {cost_time} used memory: {memory_used} '
+                        trans_with_info.append(f'batch-info: cost time: {cost_time} '
+                                               f'used memory: {memory_used} '
                                                f'cpu usage: {cpu_usage}')
                         trans_with_info.append(f'{transcription[i]} ({idx[i]}) ')
                     else:
@@ -226,3 +217,58 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
     get_usage_info(total_cost_time, total_audio_time, memory, max_cpu_usage, trans_with_info)
     save_eval(export_dir, refs, trans, trans_with_info)
 
+
+def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
+                          batch_size: int, language: str, device: torch.device):
+    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index))
+    processor = WhisperProcessor.from_pretrained(model_path)
+    generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
+
+    dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='whisper_openai')
+    print('=' * 100)
+
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
+
+    refs = []
+    trans = []
+    memory = []
+    trans_with_info = []
+
+    total_cost_time = 0
+    total_audio_time = 0
+    max_cpu_usage = 0
+
+    for batch in tqdm(dataloader):
+        data_path, ref, idx = batch
+        data_path = list(data_path)
+
+        with CountTime(handle) as ct:
+            result = pipe(data_path, return_timestamps=False, generate_kwargs=generate_kwargs)
+
+        cost_time = ct.cost_time
+        memory_used = ct.cost_memory
+        print(cost_time)
+
+        total_cost_time += cost_time
+        memory.append(memory_used)
+
+        cpu_usage = psutil.cpu_percent(interval=1)
+        max_cpu_usage = max(cpu_usage, max_cpu_usage)
+
+        for i in range(len(result)):
+            transcription = result[i]['text']
+            total_audio_time += get_duration_from_idx(idx[i])
+            refs.append(f'{ref[i]} ({idx[i]})')
+            trans.append(f'{transcription} ({idx[i]})')
+            if i == 0:
+                trans_with_info.append(f'batch-info: cost time: {cost_time} '
+                                       f'used memory: {memory_used} '
+                                       f'cpu usage: {cpu_usage}')
+                trans_with_info.append(f'{transcription} ({idx[i]}) ')
+            else:
+                trans_with_info.append(f'{transcription} ({idx[i]})')
+
+    export_dir += f'-pipeline'
+    get_usage_info(total_cost_time, total_audio_time, memory, max_cpu_usage, trans_with_info)
+    save_eval(export_dir, refs, trans, trans_with_info)
