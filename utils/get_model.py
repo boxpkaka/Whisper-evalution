@@ -1,7 +1,7 @@
-import torch
 import platform
-from transformers import WhisperProcessor, WhisperForConditionalGeneration
+import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, AutoModelForCausalLM
+from transformers import WhisperProcessor, WhisperForConditionalGeneration
 
 
 def load_whisper(path: str):

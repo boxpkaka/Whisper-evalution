@@ -69,7 +69,7 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
             model.feature_extractor.get_mel_filters(model.feature_extractor.sampling_rate,
                                                     model.feature_extractor.n_fft, n_mels=128)
 
-    dataloader = get_dataloader(dataset_dir, None, batch_size=32, shuffle=False, type='whisper_faster')
+    dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_faster')
 
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(device_index)
