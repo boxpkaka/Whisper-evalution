@@ -3,6 +3,7 @@ import torch
 import whisper
 import os
 import pynvml
+import psutil
 from tqdm import tqdm
 from transformers import WhisperProcessor
 from faster_whisper import WhisperModel
@@ -47,8 +48,7 @@ def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, lang
 
 
 def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str,
-                        use_cpu: bool, int8: bool, num_workers: int,
-                        device: torch.device):
+                        use_cpu: bool, int8: bool, num_workers: int, device: torch.device):
     if use_cpu:
         device = 'cpu'
         compute_type = 'int8'
@@ -80,8 +80,8 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
             data_path = data_path[0]
             ref = ref[0]
             idx = idx[0]
+
             with StepCounter(handle) as ct:
-                wav, _ = soundfile.read(data_path)
                 segments, info = model.transcribe(audio=data_path, language=language)
                 for segment in segments:
                     transcription = segment.text
@@ -121,18 +121,17 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
         with torch.cuda.amp.autocast():
             with torch.no_grad():
                 for batch in tqdm(dataloader):
+                    input_features, ref, idx = batch
+                    input_features = input_features.to(device)
 
                     with StepCounter(handle) as ct:
-                        input_features, ref, idx = batch
-                        input_features = input_features.to(device)
-
                         predicted_ids = model.generate(input_features, task='transcribe', language=language)
                         transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
                     cost_time = ct.cost_time
                     memory_used = ct.cost_memory
                     cpu_usage = ct.cpu_usage
-
+                    print(cpu_usage)
                     monitor.total_cost_time += cost_time
                     monitor.memory.append(memory_used)
                     monitor.max_cpu_usage = max(cpu_usage, monitor.max_cpu_usage)
@@ -157,7 +156,6 @@ def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
     pipe = get_pipeline(model_path, batch_size, gpu=str(device.index))
     processor = WhisperProcessor.from_pretrained(model_path)
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
-
     dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='whisper_openai')
     print('=' * 100)
 

@@ -25,13 +25,13 @@ def eval_whisper(args):
     device = torch.device(f'cuda:{args.gpu}')
 
     print('=' * 100)
-    print('model:    ',   model_name)
-    print('language: ',   args.language)
-    print('test set: ',   dataset_list[args.data_index])
-    print('export:   ',   export_dir)
-    print('gpu:      ',   args.gpu)
+    print('model:      ', model_name)
+    print('language:   ', args.language)
+    print('test set:   ', dataset_list[args.data_index])
+    print('export:     ', export_dir)
+    print('gpu:        ', args.gpu)
     print('batch size: ', args.batch_size)
-    print('use int8: ',   args.int8)
+    print('use int8:   ', args.int8)
 
     if re.match('openai', model_name) is not None:
         eval_whisper_openai(model_path, dataset_dir, export_dir, args.language, device)
