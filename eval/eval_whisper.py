@@ -104,7 +104,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                              batch_size: int, language: str, device: torch.device) -> None:
     model, processor = load_whisper(model_path)
     print('param:    ', count_model(model))
-    dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='feature')
+    dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, type='feature', processor=processor)
     print('=' * 100)
 
     pynvml.nvmlInit()
