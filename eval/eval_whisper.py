@@ -131,7 +131,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                     cost_time = ct.cost_time
                     memory_used = ct.cost_memory
                     cpu_usage = ct.cpu_usage
-                    print(cpu_usage)
+
                     monitor.total_cost_time += cost_time
                     monitor.memory.append(memory_used)
                     monitor.max_cpu_usage = max(cpu_usage, monitor.max_cpu_usage)
