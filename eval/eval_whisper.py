@@ -28,7 +28,7 @@ def save_eval(export_dir, refs, trans, trans_with_time=None):
 
 
 def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, language: str, device: torch.device):
-    dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_openai')
+    dataloader = get_dataloader(dataset_dir, batch_size=1, shuffle=False, type='path')
     model = whisper.load_model(os.path.join(model_path, 'model.pt'), device=device)
     param = count_model(model)
     print(param)
@@ -69,20 +69,20 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
             model.feature_extractor.get_mel_filters(model.feature_extractor.sampling_rate,
                                                     model.feature_extractor.n_fft, n_mels=128)
 
-    dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_faster')
+    dataloader = get_dataloader(dataset_dir, batch_size=1, shuffle=False, type='dict')
 
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(device_index)
 
     with TrainMonitor() as monitor:
         for batch in tqdm(dataloader):
-            data_path, ref, idx = batch
-            data_path = data_path[0]
+            data, ref, idx = batch
+            data = data[0]['raw']
             ref = ref[0]
             idx = idx[0]
 
             with StepCounter(handle) as ct:
-                segments, info = model.transcribe(audio=data_path, language=language)
+                segments, info = model.transcribe(audio=data, language=language)
                 for segment in segments:
                     transcription = segment.text
 
@@ -109,7 +109,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                              batch_size: int, language: str, device: torch.device) -> None:
     model, processor = load_whisper(model_path)
     print('param:    ', count_model(model))
-    dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='whisper_huggingface')
+    dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='feature')
     print('=' * 100)
 
     pynvml.nvmlInit()
@@ -123,7 +123,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                 for batch in tqdm(dataloader):
                     input_features, ref, idx = batch
                     input_features = input_features.to(device)
-
+                    print(input_features.shape)
                     with StepCounter(handle) as ct:
                         predicted_ids = model.generate(input_features, task='transcribe', language=language)
                         transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
@@ -154,9 +154,8 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
 def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
                           batch_size: int, language: str, device: torch.device) -> None:
     pipe = get_pipeline(model_path, batch_size, gpu=str(device.index))
-    processor = WhisperProcessor.from_pretrained(model_path)
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
-    dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='whisper_openai')
+    dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, type='dict')
     print('=' * 100)
 
     pynvml.nvmlInit()

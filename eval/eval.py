@@ -1,5 +1,4 @@
 import re
-import os
 import argparse
 from eval.eval_whisper import *
 from eval.eval_mms import *
