@@ -7,9 +7,9 @@ class StepCounter(object):
     def __init__(self, handle=None, current_process=None):
         self.time = 0
         self.cost_time = 0
+        self.cpu_usage = 0
         self.cost_memory = 0
         self.handle = handle
-        self.cpu_usage = 0
         self.process = current_process
 
     def __enter__(self):
@@ -19,12 +19,14 @@ class StepCounter(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         cost_time = round(time.perf_counter() - self.time, 3)
         if self.process is not None:
-            self.cpu_usage = self.process.cpu_percent(interval=1)
+            self.cpu_usage = self.process.cpu_percent(interval=None)
         else:
-            self.cpu_usage = psutil.cpu_percent(interval=1)
+            self.cpu_usage = psutil.cpu_percent(interval=None)
+
         if self.handle is not None:
             memory_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
             self.cost_memory = memory_info.used / 1024 ** 2
+
         self.cost_time = cost_time
 
 
