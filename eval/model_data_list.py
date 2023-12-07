@@ -4,7 +4,8 @@ model_name_list = [
     'whisper-large-v3-lora50-final',
     'whisper-large-v3-lora50+50-14000-attn-none',
     'whisper-large-v3-lora50+50-final-attn-none',
-    'faster-whisper-large-v3-lora50+50',
+    'faster-whisper-large-v3',
+    'faster-whisper-large-v3-lora500'
 ]
 
 dataset_list = [

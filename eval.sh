@@ -1,13 +1,13 @@
 python -m eval.eval \
        --model_dir /data1/yumingdong/model/ \
-       --model_type finetuned \
-       --model_index 4 \
+       --model_type ct2 \
+       --model_index 5 \
        --dataset_dir /data2/yumingdong/data \
-       --data_index 8 \
+       --data_index 0 \
        --export_dir /data1/yumingdong/whisper/whisper-eval/exp \
-       --batch_size 32 \
+       --batch_size 16 \
        --language zh \
-       --int8 False \
        --num_workers 16 \
        --gpu 7 \
-       --pipeline 1
+#       --int8 1 \
+#       --pipeline 1

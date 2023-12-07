@@ -1,3 +1,4 @@
+import soundfile
 import torch
 import whisper
 import os
@@ -5,14 +6,14 @@ import pynvml
 import psutil
 from tqdm import tqdm
 from typing import List
-from transformers import MCTCTForCTC, MCTCTProcessor, WhisperProcessor
+from transformers import WhisperProcessor
 from faster_whisper import WhisperModel
 from dataloader import get_dataloader
 from eval.eval_with_trn import eval_with_trn
 from norm.norm_with_trn import normalize_cantonese
 from utils.count_model import count_model
 from utils.get_save_file import save_file
-from utils.count_time import CountTime
+from utils.count_usage import CountTime
 from utils.get_audio_duration import get_duration_from_idx
 from utils.get_model import get_pipeline, load_whisper
 
@@ -70,21 +71,26 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
         compute_type = 'int8'
         device_index = None
     else:
-        device = 'cuda'
         device_index = device.index
+        device = 'cuda'
         if int8:
             compute_type = 'int8_float16'
         else:
             compute_type = 'float16'
-    print(type(device_index))
-    print(use_cpu)
-    model = WhisperModel(model_path, device=device,
-                         compute_type=compute_type, device_index=device_index, num_workers=num_workers)
+
+    model = WhisperModel(model_path, device=device, compute_type=compute_type,
+                         device_index=device_index, num_workers=num_workers,
+                         )
+
+    if 'large-v3' in model_path:
+        model.feature_extractor.mel_filters = \
+            model.feature_extractor.get_mel_filters(model.feature_extractor.sampling_rate,
+                                                    model.feature_extractor.n_fft, n_mels=128)
 
     dataloader = get_dataloader(dataset_dir, None, batch_size=1, shuffle=False, type='whisper_faster')
 
     pynvml.nvmlInit()
-    handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
+    handle = pynvml.nvmlDeviceGetHandleByIndex(device_index)
 
     refs = []
     trans = []
@@ -96,17 +102,18 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
     max_cpu_usage = 0
 
     for batch in tqdm(dataloader):
+        data_path, ref, idx = batch
+        data_path = data_path[0]
+        ref = ref[0]
+        idx = idx[0]
         with CountTime(handle) as ct:
-            data_path, ref, idx = batch
-            data_path = data_path[0]
-            ref = ref[0]
-            idx = idx[0]
+            wav, _ = soundfile.read(data_path)
+            print(wav.shape)
             segments, info = model.transcribe(audio=data_path, language=language)
             for segment in segments:
                 transcription = segment.text
-
+        print(transcription)
         cost_time = ct.cost_time
-        memory = ct.cost_memory
         memory_used = ct.cost_memory
 
         total_cost_time += cost_time
@@ -128,41 +135,8 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
     save_eval(export_dir, refs, trans)
 
 
-def eval_mms(model_path: str, dataset_dir: str, export_dir: str, device: torch.device):
-    model = MCTCTForCTC.from_pretrained(model_path)
-    processor = MCTCTProcessor.from_pretrained(model_path)
-
-    model.config.forced_decoder_ids = None
-    print('param:    ', count_model(model))
-    dataloader = get_dataloader(dataset_dir, None, 1, False, type='whisper_huggingface')
-
-    count = 1
-    refs = []
-    trans = []
-    model.to(device)
-    model.eval()
-    for batch in dataloader:
-        wav, sr, wav_length, ref, idx = batch
-        wav = wav[0][:wav_length[0]]
-        idx = idx[0]
-
-        input_features = processor(wav, sampling_rate=16000, return_tensors='pt').input_features.to(device)
-        logits = model(input_features).logits
-        predicted_ids = torch.argmax(logits, dim=-1)
-        transcription = processor.batch_decode(predicted_ids)[0]
-
-        refs.append(f'{ref[0]} ({idx})')
-        trans.append(f'{transcription} ({idx})')
-        print(str(count) + '/' + str(len(dataloader)))
-        print('reference: ', ref[0])
-        print('mms:       ', transcription)
-        count += 1
-
-    save_eval(export_dir, refs, trans)
-
-
 def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
-                             batch_size: int, language: str, device: torch.device):
+                             batch_size: int, language: str, device: torch.device) -> None:
     model, processor = load_whisper(model_path)
     print('param:    ', count_model(model))
     dataloader = get_dataloader(dataset_dir, processor, batch_size, shuffle=False, type='whisper_huggingface')
@@ -219,7 +193,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
 
 
 def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
-                          batch_size: int, language: str, device: torch.device):
+                          batch_size: int, language: str, device: torch.device) -> None:
     pipe = get_pipeline(model_path, batch_size, gpu=str(device.index))
     processor = WhisperProcessor.from_pretrained(model_path)
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}

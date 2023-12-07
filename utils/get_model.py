@@ -5,8 +5,8 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, Aut
 
 
 def load_whisper(path: str):
-    whisper = WhisperForConditionalGeneration.from_pretrained(path)
-    whisper_processor = WhisperProcessor.from_pretrained(path)
+    whisper = WhisperForConditionalGeneration.from_pretrained(path, local_files_only=True)
+    whisper_processor = WhisperProcessor.from_pretrained(path, local_files_only=True)
 
     return whisper, whisper_processor
 

@@ -1,6 +1,8 @@
 import re
+import os
 import argparse
 from eval.eval_whisper import *
+from eval.eval_mms import *
 from eval.model_data_list import model_name_list, dataset_list
 
 
