@@ -103,10 +103,12 @@ class DataLoaderDict(Dataset):
         ref = self.text_dic[idx]
         return item, ref, idx
 
+
 def collate_fn_features(batch):
     features, ref, idx = zip(*batch)
     features = torch.cat(features, dim=0)
     return features, list(ref), list(idx)
+
 
 def collate_fn_dict(batch):
     item, ref, idx = zip(*batch)
@@ -114,10 +116,10 @@ def collate_fn_dict(batch):
 
 
 if __name__ == "__main__":
-    audio_paths = '/data2/yumingdong/data/test_1000Cantonese'
-    dataloader = get_dataloader(audio_paths, batch_size=1, shuffle=False, type='dict')
+    audio_paths = '/data2/yumingdong/data/deploy_test-cantonese'
+    dataloader = get_dataloader(audio_paths, batch_size=16, shuffle=False, type='dict')
 
     for batch in dataloader:
-        for i in batch:
-            print(i)
+        data_path, ref, idx = batch
+        print(data_path)
 

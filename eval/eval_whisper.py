@@ -148,7 +148,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
 
 def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
                           batch_size: int, language: str, device: torch.device) -> None:
-    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index))
+    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index), use_flash_attention_2=True)
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
     dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, type='dict')
     print('=' * 100)
@@ -156,13 +156,12 @@ def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
 
-    with TrainMonitor as monitor:
+    with TrainMonitor() as monitor:
         for batch in tqdm(dataloader):
-            data_path, ref, idx = batch
-            data_path = list(data_path)
+            data, ref, idx = batch
 
             with StepCounter(handle) as ct:
-                result = pipe(data_path, return_timestamps=False, generate_kwargs=generate_kwargs)
+                result = pipe(data, return_timestamps=False, generate_kwargs=generate_kwargs)
 
             cost_time = ct.cost_time
             memory_used = ct.cost_memory
