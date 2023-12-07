@@ -119,7 +119,15 @@ if __name__ == "__main__":
     audio_paths = '/data2/yumingdong/data/deploy_test-cantonese'
     dataloader = get_dataloader(audio_paths, batch_size=16, shuffle=False, type='dict')
 
+    data_set = []
+    ref_set = []
+    idx_set = []
     for batch in dataloader:
-        data_path, ref, idx = batch
-        print(data_path)
+        data, ref, idx = batch
+        data_set.extend(data)
+        ref_set.extend(ref)
+        idx_set.extend(idx)
+    print(len(data_set))
+    print(len(ref_set))
+    print(len(idx_set))
 

@@ -156,33 +156,46 @@ def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
 
+    data_set = []
+    ref_set = []
+    idx_set = []
+
+    for batch in dataloader:
+        data, ref, idx = batch
+        data_set.extend(data)
+        ref_set.extend(ref)
+        idx_set.extend(idx)
+
     with TrainMonitor() as monitor:
-        for batch in tqdm(dataloader):
+        for batch in dataloader:
             data, ref, idx = batch
+            data_set.extend(data)
+            ref_set.extend(ref)
+            idx_set.extend(idx)
 
-            with StepCounter(handle) as ct:
-                result = pipe(data, return_timestamps=False, generate_kwargs=generate_kwargs)
+        with StepCounter(handle) as ct:
+            result = pipe(data_set, return_timestamps=False, generate_kwargs=generate_kwargs)
 
-            cost_time = ct.cost_time
-            memory_used = ct.cost_memory
-            cpu_usage = ct.cpu_usage
+        cost_time = ct.cost_time
+        memory_used = ct.cost_memory
+        cpu_usage = ct.cpu_usage
 
-            monitor.total_cost_time += cost_time
-            monitor.memory.append(memory_used)
-            monitor.max_cpu_usage = max(cpu_usage, monitor.max_cpu_usage)
+        monitor.total_cost_time += cost_time
+        monitor.memory.append(memory_used)
+        monitor.max_cpu_usage = max(cpu_usage, monitor.max_cpu_usage)
 
-            for i in range(len(result)):
-                transcription = result[i]['text']
-                monitor.total_audio_time += get_duration_from_idx(idx[i])
-                monitor.refs.append(f'{ref[i]} ({idx[i]})')
-                monitor.trans.append(f'{transcription} ({idx[i]})')
-                if i == 0:
-                    monitor.trans_with_info.append(f'batch-info: cost time: {cost_time} '
-                                                   f'used memory: {memory_used} '
-                                                   f'cpu usage: {cpu_usage}')
-                    monitor.trans_with_info.append(f'{transcription} ({idx[i]}) ')
-                else:
-                    monitor.trans_with_info.append(f'{transcription} ({idx[i]})')
+        for i in range(len(result)):
+            transcription = result[i]['text']
+            monitor.total_audio_time += get_duration_from_idx(idx_set[i])
+            monitor.refs.append(f'{ref_set[i]} ({idx_set[i]})')
+            monitor.trans.append(f'{transcription} ({idx_set[i]})')
+            if i == 0:
+                monitor.trans_with_info.append(f'batch-info: cost time: {cost_time} '
+                                               f'used memory: {memory_used} '
+                                               f'cpu usage: {cpu_usage}')
+                monitor.trans_with_info.append(f'{transcription} ({idx_set[i]}) ')
+            else:
+                monitor.trans_with_info.append(f'{transcription} ({idx_set[i]})')
 
     export_dir += f'-pipeline'
     save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
