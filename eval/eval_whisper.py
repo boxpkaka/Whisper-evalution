@@ -47,19 +47,14 @@ def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, lang
     save_eval(export_dir, refs, trans)
 
 
-def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str,
-                        use_cpu: bool, int8: bool, num_workers: int, device: torch.device):
+def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str, use_cpu: bool,
+                        num_workers: int, compute_type: str, device: torch.device):
     if use_cpu:
         device = 'cpu'
-        compute_type = 'int8'
         device_index = None
     else:
         device_index = device.index
         device = 'cuda'
-        if int8:
-            compute_type = 'int8_float16'
-        else:
-            compute_type = 'float16'
 
     model = WhisperModel(model_path, device=device, compute_type=compute_type,
                          device_index=device_index, num_workers=num_workers)
@@ -184,8 +179,8 @@ def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
                 monitor.trans.append(f'{transcription} ({idx[i]})')
                 if i == 0:
                     monitor.trans_with_info.append(f'batch-info: cost time: {cost_time} '
-                                           f'used memory: {memory_used} '
-                                           f'cpu usage: {cpu_usage}')
+                                                   f'used memory: {memory_used} '
+                                                   f'cpu usage: {cpu_usage}')
                     monitor.trans_with_info.append(f'{transcription} ({idx[i]}) ')
                 else:
                     monitor.trans_with_info.append(f'{transcription} ({idx[i]})')

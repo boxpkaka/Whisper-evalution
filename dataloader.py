@@ -115,9 +115,7 @@ def collate_fn_dict(batch):
 
 if __name__ == "__main__":
     audio_paths = '/data2/yumingdong/data/test_1000Cantonese'
-    # whisper_processor = WhisperProcessor.from_pretrained('/data1/yumingdong/model/huggingface_model/whisper-large-v3')
-    dataset = DataLoaderDict(audio_paths)
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn_dict)
+    dataloader = get_dataloader(audio_paths, batch_size=1, shuffle=False, type='dict')
 
     for batch in dataloader:
         for i in batch:

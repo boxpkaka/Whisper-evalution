@@ -24,19 +24,19 @@ def eval_whisper(args):
     device = torch.device(f'cuda:{args.gpu}')
 
     print('=' * 100)
-    print('model:      ', model_name)
-    print('language:   ', args.language)
-    print('test set:   ', dataset_list[args.data_index])
-    print('export:     ', export_dir)
-    print('gpu:        ', args.gpu)
-    print('batch size: ', args.batch_size)
-    print('use int8:   ', args.int8)
+    print('model:        ', f'{args.model_type} & {model_name}')
+    print('language:     ', args.language)
+    print('test set:     ', dataset_list[args.data_index])
+    print('export:       ', export_dir)
+    print('gpu:          ', args.gpu)
+    print('batch size:   ', args.batch_size)
+    print('compute type: ', args.compute_type)
 
     if re.match('openai', model_name) is not None:
         eval_whisper_openai(model_path, dataset_dir, export_dir, args.language, device)
     elif re.match('faster', model_name) is not None:
         eval_faster_whisper(model_path, dataset_dir, export_dir, args.language,
-                            args.use_cpu, args.int8, args.num_workers, device)
+                            args.use_cpu, args.num_workers, args.compute_type, device)
     elif re.match('m-ctc', model_name) is not None:
         eval_mms(model_path, dataset_dir, export_dir, device)
     elif args.pipeline:
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('--language',               help='whisper inference language', type=str)
     parser.add_argument('--batch_size',             help='batch size',                 type=int)
     parser.add_argument('--use_cpu', default=False, help='use cpu of ct2model',        type=bool)
-    parser.add_argument('--int8',                   help='ues int8 of ct2model',       type=bool)
+    parser.add_argument('--compute_type',           help='auto/int8/int8_float16...',  type=str)
     parser.add_argument('--num_workers',            help='workers nums of ct2model',   type=int)
     parser.add_argument('--pipeline',               help='use transformers pipeline',  type=bool)
     parser.add_argument('--gpu',     default=0,     help='gpu id',                     type=str)
