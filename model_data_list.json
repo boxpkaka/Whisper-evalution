@@ -1,0 +1,33 @@
+model_name_list = {
+    'huggingface': [
+        'whisper-large-v3',
+        'whisper-small'
+    ],
+    'finetuned': [
+        'whisper-large-v3-lora500-final',
+        'whisper-large-v3-lora50-final',
+        'whisper-large-v3-lora50+50-14000-attn-none',
+        'whisper-large-v3-lora50+50-final-attn-none',
+    ],
+    'distiled': [
+        'distil-large-v2-fp16',
+        'distil-large-v2-fp32'
+    ],
+    'ct2': [
+        'faster-whisper-large-v3',
+        'faster-whisper-large-v3-lora500'
+        'faster-whisper-large-v3-lora50+50'
+    ]
+}
+
+dataset_list = [
+    'test_1000Cantonese',
+    'test_datatang500h',
+    'test_magicdatacantonese',
+    'test_commonvoicecantonese',
+    'test_kejiyuan',
+    'test_hk_can',
+    'dev_mandarin_2h',
+    'aishell/test',
+    'deploy_test-cantonese'
+]
