@@ -4,6 +4,8 @@ import os
 import pynvml
 from tqdm import tqdm
 from faster_whisper import WhisperModel
+from peft import PeftConfig, inject_adapter_in_model
+
 from dataloader import get_dataloader
 from eval.eval_with_trn import eval_with_trn
 from norm.norm_with_trn import normalize_cantonese
@@ -100,7 +102,10 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
 def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str, batch_size: int,
                              language: str, num_workers: int, device: torch.device, lora_dir=None) -> None:
     model, processor = load_whisper(model_path)
-    
+    if lora_dir is not None:
+        peft_config = PeftConfig.from_pretrained(lora_dir)
+        model = inject_adapter_in_model(peft_config, model)
+        print('Lora has been loaded!')
     print('param:    ', count_model(model))
     dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, num_workers=num_workers,
                                 return_type='feature', processor=processor)

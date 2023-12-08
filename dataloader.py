@@ -1,9 +1,10 @@
 import os
+import tqdm
 import librosa
 import torch
 import soundfile
-import torchaudio
 from typing import Dict, Tuple, List
+
 from torch.utils.data import Dataset, DataLoader
 from utils.get_save_file import get_file
 
@@ -46,10 +47,10 @@ class BaseDataloader(Dataset):
         return len(self.audio_file)
 
     @staticmethod
-    def _resample(wav, sr, target_sr=16000):
+    def _resample(wav, sr, tgt_sr=16000):
         if sr != 16000:
-            wav = librosa.resample(wav, orig_sr=sr, target_sr=16000)
-            sr = target_sr
+            wav = librosa.resample(wav, orig_sr=sr, target_sr=tgt_sr)
+            sr = tgt_sr
         return wav, sr
 
 
@@ -102,17 +103,23 @@ def collate_fn_dict(batch):
 
 
 if __name__ == "__main__":
-    audio_path = '/data2/yumingdong/data/test_1000Cantonese'
+    audio_path = '/data2/yumingdong/data/deploy_test-cantonese'
     model_path = '/data1/yumingdong/model/huggingface/whisper-small'
     from transformers import WhisperProcessor
+    from utils.get_audio_duration import get_duration_from_idx
     processor = WhisperProcessor.from_pretrained(model_path)
-    dataloader = get_dataloader(audio_path, batch_size=4, num_workers=16, shuffle=False, return_type='feature', processor=processor)
+    dataloader = get_dataloader(audio_path, batch_size=32, num_workers=1, shuffle=False, return_type='dict')
 
-    for batch in dataloader:
+    total = 0
+    max_len = 0
+    for batch in tqdm.tqdm(dataloader):
         data, ref, idx = batch
-        print(data)
-        print(ref)
-        print(idx)
-        break
+
+        for i in idx:
+            total += get_duration_from_idx(i)
+            max_len = max(max_len, get_duration_from_idx(i))
+    print(f'total: {total}')
+    print(max_len)
+
 
 

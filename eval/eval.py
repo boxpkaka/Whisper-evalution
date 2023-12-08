@@ -42,7 +42,8 @@ def eval_whisper(args):
     elif args.pipeline:
         eval_whisper_pipeline(model_path, dataset_dir, export_dir, args.batch_size, args.language, device)
     else:
-        eval_whisper_huggingface(model_path, dataset_dir, export_dir, args.batch_size, args.language, device)
+        eval_whisper_huggingface(model_path, dataset_dir, export_dir, args.batch_size, args.language,
+                                 args.num_workers, device, args.lora_dir)
 
 
 if __name__ == "__main__":
@@ -50,6 +51,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_dir',              help='model root directory',       type=str)
     parser.add_argument('--model_type',             help='type of model',              type=str)
     parser.add_argument('--model_index',            help='index of model list',        type=int)
+    parser.add_argument('--lora_dir', default=None, help='index of model list',        type=str)
     parser.add_argument('--dataset_dir',            help='dataset root directory',     type=str)
     parser.add_argument('--data_index',             help='index of dataset list',      type=int)
     parser.add_argument('--export_dir',             help='export directory of result', type=str)
