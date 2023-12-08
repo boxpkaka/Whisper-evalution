@@ -113,14 +113,13 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
     model.to(device)
     model.eval()
     with TrainMonitor() as monitor:
-        with torch.cuda.amp.autocast():
-            with torch.no_grad():
-                for batch in tqdm(dataloader):
-                    input_features, ref, idx = batch
-                    input_features = input_features.to(device)
+        with torch.no_grad():
+            for batch in tqdm(dataloader):
+                input_features, ref, idx = batch
+                input_features = input_features.to(device)
 
-                    with StepCounter(handle) as ct:
-                        print(input_features.dtype)
+                with StepCounter(handle) as ct:
+                    with torch.cuda.amp.autocast(enabled=True):
                         predicted_ids = model.generate(input_features, task='transcribe', language=language)
                         transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
