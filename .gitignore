@@ -4,4 +4,4 @@ exp/
 eval/__pycache__
 test.py
 eval.sh
-model_data_list.json
+eval/model_data_list.json
