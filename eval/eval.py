@@ -1,17 +1,20 @@
 import re
+import os
 import argparse
 from eval.eval_whisper import *
 from eval.eval_mms import *
-from eval.model_data_list import model_name_list, dataset_list
+from utils.get_save_file import get_json
 
 
 def eval_whisper(args):
-    model_dir = os.path.join(args.model_dir, args.model_type)
+    config = get_json(args.config)
+    print(config)
+    model_dir = os.path.join(config['model_dir'], args.model_type)
 
-    model_name = model_name_list[args.model_index]
+    model_name = config['model_name_list'][args.model_type][args.model_index]
     model_path = os.path.join(model_dir, model_name)
 
-    dataset_dir = os.path.join(args.dataset_dir, dataset_list[args.data_index])
+    dataset_dir = os.path.join(config['dataset_dir'], config['dataset_list'][args.data_index])
 
     # Create name of save directory
     export_postfix = dataset_dir.split('/')[-1]
@@ -19,14 +22,14 @@ def eval_whisper(args):
         export_postfix, split = dataset_dir.split('/')[-2:]
         export_postfix = f'{split}-{export_postfix}'
 
-    export_dir = os.path.join(args.export_dir, model_name + '-' + export_postfix)
+    export_dir = os.path.join(config['export_dir'], model_name + '-' + export_postfix)
 
     device = torch.device(f'cuda:{args.gpu}')
 
     print('=' * 100)
     print('model:        ', f'{args.model_type} & {model_name}')
     print('language:     ', args.language)
-    print('test set:     ', dataset_list[args.data_index])
+    print('test set:     ', config['dataset_list'][args.data_index])
     print('export:       ', export_dir)
     print('gpu:          ', args.gpu)
     print('batch size:   ', args.batch_size)
@@ -48,13 +51,11 @@ def eval_whisper(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='eval whisper')
-    parser.add_argument('--model_dir',              help='model root directory',       type=str)
+    parser.add_argument('--config',                 help='config path'  ,              type=str)
     parser.add_argument('--model_type',             help='type of model',              type=str)
     parser.add_argument('--model_index',            help='index of model list',        type=int)
-    parser.add_argument('--lora_dir', default=None, help='index of model list',        type=str)
-    parser.add_argument('--dataset_dir',            help='dataset root directory',     type=str)
+    parser.add_argument('--lora_dir', default=None, help='directory of LoRA file',     type=str)
     parser.add_argument('--data_index',             help='index of dataset list',      type=int)
-    parser.add_argument('--export_dir',             help='export directory of result', type=str)
     parser.add_argument('--language',               help='whisper inference language', type=str)
     parser.add_argument('--batch_size',             help='batch size',                 type=int)
     parser.add_argument('--use_cpu', default=False, help='use cpu of ct2model',        type=bool)

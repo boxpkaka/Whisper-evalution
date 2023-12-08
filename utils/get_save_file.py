@@ -1,5 +1,5 @@
-from typing import List
-
+from typing import List, Dict
+import json
 
 def get_file(path: str) -> List:
     with open(path, 'r', encoding='utf-8') as f:
@@ -12,3 +12,9 @@ def save_file(path: str, file: List) -> None:
     with open(path, 'w', encoding='utf-8') as f:
         for item in file:
             f.write(item + '\n')
+
+
+def get_json(path: str) -> Dict:
+    with open(path, 'r') as f:
+        file = json.load(f)
+    return file
