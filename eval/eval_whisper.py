@@ -1,11 +1,8 @@
-import soundfile
 import torch
 import whisper
 import os
 import pynvml
-import psutil
 from tqdm import tqdm
-from transformers import WhisperProcessor
 from faster_whisper import WhisperModel
 from dataloader import get_dataloader
 from eval.eval_with_trn import eval_with_trn
@@ -27,8 +24,9 @@ def save_eval(export_dir, refs, trans, trans_with_time=None):
     eval_with_trn(export_dir)
 
 
-def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, language: str, device: torch.device):
-    dataloader = get_dataloader(dataset_dir, batch_size=1, shuffle=False, type='path')
+def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, language: str,
+                        num_workers: int, device: torch.device):
+    dataloader = get_dataloader(dataset_dir, batch_size=1, num_workers=num_workers, shuffle=False, return_type='path')
     model = whisper.load_model(os.path.join(model_path, 'model.pt'), device=device)
     param = count_model(model)
     print(param)
@@ -49,22 +47,21 @@ def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, lang
 
 def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str, use_cpu: bool,
                         num_workers: int, compute_type: str, device: torch.device):
+    print('=' * 100)
+    dataloader = get_dataloader(dataset_dir, batch_size=1, shuffle=False, num_workers=num_workers, return_type='dict')
+    device_index = device.index
     if use_cpu:
-        device = 'cpu'
-        device_index = None
+        kwargs = {'model_size_or_path': model_path, 'device': 'cpu', 'num_workers': num_workers, 'cpu_threads': 32}
     else:
-        device_index = device.index
-        device = 'cuda'
+        kwargs = {'model_size_or_path': model_path, 'device': 'cuda', 'compute_type': compute_type,
+                 'device_index': device_index, 'num_workers': num_workers}
 
-    model = WhisperModel(model_path, device=device, compute_type=compute_type,
-                         device_index=device_index, num_workers=num_workers)
+    model = WhisperModel(**kwargs)
 
     if 'large-v3' in model_path:
         model.feature_extractor.mel_filters = \
             model.feature_extractor.get_mel_filters(model.feature_extractor.sampling_rate,
                                                     model.feature_extractor.n_fft, n_mels=128)
-
-    dataloader = get_dataloader(dataset_dir, batch_size=1, shuffle=False, type='dict')
 
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(device_index)
@@ -100,11 +97,13 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
     save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
 
 
-def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
-                             batch_size: int, language: str, device: torch.device) -> None:
+def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str, batch_size: int,
+                             language: str, num_workers: int, device: torch.device, lora_dir=None) -> None:
     model, processor = load_whisper(model_path)
+    
     print('param:    ', count_model(model))
-    dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, type='feature', processor=processor)
+    dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, num_workers=num_workers,
+                                return_type='feature', processor=processor)
     print('=' * 100)
 
     pynvml.nvmlInit()
