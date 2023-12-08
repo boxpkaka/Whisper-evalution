@@ -9,15 +9,15 @@ import os
 def get_dataloader(audio_path: str, batch_size: int, shuffle: bool, type: str, processor=None):
     if type == 'path':
         dataset = DataLoaderAudioPath(audio_path)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=16)
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=8)
     elif type == 'feature':
         dataset = DataLoaderFeatures(audio_path, processor)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
-                                collate_fn=collate_fn_features, num_workers=16)
+                                collate_fn=collate_fn_features, num_workers=8)
     elif type == 'dict':
         dataset = DataLoaderDict(audio_path)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
-                                collate_fn=collate_fn_dict, num_workers=16)
+                                collate_fn=collate_fn_dict, num_workers=8)
     return dataloader
 
 
@@ -111,23 +111,22 @@ def collate_fn_features(batch):
 
 
 def collate_fn_dict(batch):
-    item, ref, idx = zip(*batch)
-    return list(item), list(ref), list(idx)
+    item = [i[0] for i in batch]
+    ref = [i[1] for i in batch]
+    idx = [i[2] for i in batch]
+
+    return item, ref, idx
 
 
 if __name__ == "__main__":
     audio_paths = '/data2/yumingdong/data/deploy_test-cantonese'
-    dataloader = get_dataloader(audio_paths, batch_size=16, shuffle=False, type='dict')
+    dataloader = get_dataloader(audio_paths, batch_size=4, shuffle=False, type='dict')
 
-    data_set = []
-    ref_set = []
-    idx_set = []
     for batch in dataloader:
         data, ref, idx = batch
-        data_set.extend(data)
-        ref_set.extend(ref)
-        idx_set.extend(idx)
-    print(len(data_set))
-    print(len(ref_set))
-    print(len(idx_set))
+        print(data)
+        print(ref)
+        print(idx)
+        break
+
 

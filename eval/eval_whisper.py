@@ -118,8 +118,9 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                 for batch in tqdm(dataloader):
                     input_features, ref, idx = batch
                     input_features = input_features.to(device)
-                    print(input_features.shape)
+
                     with StepCounter(handle) as ct:
+                        print(input_features.dtype)
                         predicted_ids = model.generate(input_features, task='transcribe', language=language)
                         transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
@@ -148,7 +149,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
 
 def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
                           batch_size: int, language: str, device: torch.device) -> None:
-    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index), use_flash_attention_2=True)
+    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index), assistant_model_path='/data1/yumingdong/model/huggingface/whisper-small')
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
     dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, type='dict')
     print('=' * 100)
@@ -159,20 +160,13 @@ def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
     data_set = []
     ref_set = []
     idx_set = []
-
-    for batch in dataloader:
+    for batch in tqdm(dataloader):
         data, ref, idx = batch
         data_set.extend(data)
         ref_set.extend(ref)
         idx_set.extend(idx)
 
     with TrainMonitor() as monitor:
-        for batch in dataloader:
-            data, ref, idx = batch
-            data_set.extend(data)
-            ref_set.extend(ref)
-            idx_set.extend(idx)
-
         with StepCounter(handle) as ct:
             result = pipe(data_set, return_timestamps=False, generate_kwargs=generate_kwargs)
 

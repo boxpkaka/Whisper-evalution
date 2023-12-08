@@ -42,6 +42,7 @@ def get_pipeline(model_path: str, batch_size: int, gpu: str, use_flash_attention
             assistant_model_path, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
         )
         assistant_model.to(device)
+        print('assistant model has been loaded')
         generate_kwargs_pipeline = {"assistant_model": assistant_model}
 
     # 获取管道
