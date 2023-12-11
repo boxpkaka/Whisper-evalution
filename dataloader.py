@@ -67,8 +67,8 @@ class DataLoaderFeatures(BaseDataloader):
         self.processor = processor
 
     def __getitem__(self, index):
-        idx, audio_path = self.audio_file[index].split()
-        wav, sr = soundfile.read(audio_path)
+        idx, audio_path = self.audio_file[index].split(' ')
+        wav, sr = librosa.load(audio_path)
         wav, sr = self._resample(wav, sr)
         features = self.processor(wav, sampling_rate=sr, return_tensors="pt").input_features
         ref = self.text_dic[idx]
@@ -78,7 +78,7 @@ class DataLoaderFeatures(BaseDataloader):
 class DataLoaderDict(BaseDataloader):
     def __getitem__(self, index):
         idx, audio_path = self.audio_file[index].split()
-        wav, sr = soundfile.read(audio_path)
+        wav, sr = librosa.load(audio_path)
         wav, sr = self._resample(wav, sr)
         ref = self.text_dic[idx]
         item = {"sampling_rate": sr, "raw": wav}
@@ -103,12 +103,12 @@ def collate_fn_dict(batch):
 
 
 if __name__ == "__main__":
-    audio_path = '/data2/yumingdong/data/deploy_test-cantonese'
+    audio_path = '/data2/yumingdong/data/test_1000Cantonese'
     model_path = '/data1/yumingdong/model/huggingface/whisper-small'
     from transformers import WhisperProcessor
     from utils.get_audio_duration import get_duration_from_idx
     processor = WhisperProcessor.from_pretrained(model_path)
-    dataloader = get_dataloader(audio_path, batch_size=32, num_workers=1, shuffle=False, return_type='dict')
+    dataloader = get_dataloader(audio_path, batch_size=32, num_workers=16, shuffle=False, return_type='feature', processor=processor)
 
     total = 0
     max_len = 0

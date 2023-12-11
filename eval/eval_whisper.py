@@ -13,7 +13,7 @@ from utils.count_model import count_model
 from utils.get_save_file import save_file
 from utils.count_usage import StepCounter, TrainMonitor
 from utils.get_audio_duration import get_duration_from_idx
-from utils.get_model import get_pipeline, load_whisper
+from model.get_model import get_pipeline, load_whisper
 
 
 def save_eval(export_dir, refs, trans, trans_with_time=None):
@@ -105,7 +105,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
     if lora_dir is not None:
         peft_config = PeftConfig.from_pretrained(lora_dir)
         model = inject_adapter_in_model(peft_config, model)
-        print('Lora has been loaded!')
+        print('LoRA has been loaded!')
     print('param:    ', count_model(model))
     dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, num_workers=num_workers,
                                 return_type='feature', processor=processor)

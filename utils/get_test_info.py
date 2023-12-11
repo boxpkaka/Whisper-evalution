@@ -6,7 +6,6 @@ from utils.get_save_file import get_json
 
 def get_test_info(args):
     config = get_json(args.config)
-    test_info = {}
     model_type = args.model_type
     model_dir = os.path.join(config['model_dir'], model_type)
     model_name = config['model_name_list'][model_type][args.model_index]
@@ -24,19 +23,22 @@ def get_test_info(args):
 
     device = torch.device(f'cuda:{args.gpu}')
 
-    test_info[f'model'] = f'{args.model_type} & {model_name}'
-    test_info[f'test set'] = f'{test_set}'
-    test_info[f'export'] = f'{export_dir}'
-    test_info[f'batch size'] = f'{args.batch_size}'
-    test_info[f'language'] = f'{args.language}'
-    test_info[f'num_workers'] = f'{args.num_workers}'
-    test_info[f'gpu'] = f'{args.gpu}'
+    test_info = {
+        'model': f'{args.model_type} & {model_name}',
+        'test set': f'{test_set}',
+        'export': f'{export_dir}',
+        'batch size': f'{args.batch_size}',
+        'language': f'{args.language}',
+        'num workers': f'{args.num_workers}',
+        'gpu': f'{args.gpu}'
+    }
 
     test_kwargs = {
         'model_path': model_path,
         'dataset_dir': dataset_dir,
         'export_dir': export_dir,
         'language': args.language,
+        'batch_size': args.batch_size,
         'num_workers': args.num_workers,
         'device': device
     }
@@ -53,15 +55,18 @@ def get_test_info(args):
         test_kwargs['use_flash_attention_2'] = True if args.use_flash_attention_2 > 0 else False
         test_kwargs['use_bettertransformer'] = True if args.use_bettertransformer > 0 else False
         test_kwargs['use_compile'] = True if args.use_compile > 0 else False
-        test_kwargs['assistant_model_path'] = args.assistant_model_path
+        test_kwargs['assistant_model_path'] = args.assistant_model_path if args.assistant_model_path != 'None' else None
         test_info['use_flash_attention_2'] = test_kwargs['use_flash_attention_2']
         test_info['use_bettertransformer'] = test_kwargs['use_bettertransformer']
         test_info['use_compile'] = test_kwargs['use_compile']
         test_info['assistant_model_path'] = test_kwargs['assistant_model_path']
         res = ['pipeline', test_kwargs]
     else:
-        test_kwargs['LoRA dir'] = args.lora_dir
-        test_info['LoRA dir'] = args.lora_dir
+        if args.lora_dir != 'None':
+            test_kwargs['lora_dir'] = args.lora_dir
+            test_kwargs['export_dir'] += '-' + args.lora_dir.split('/')[-2]
+            test_info['LoRA dir'] = test_kwargs['lora_dir']
+            test_info['export'] = test_kwargs['export_dir']
         res = ['huggingface', test_kwargs]
 
     max_length = max([len(k) for k in test_info.keys()])

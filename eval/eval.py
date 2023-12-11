@@ -11,7 +11,7 @@ def eval_whisper(args):
         'openai': eval_whisper_openai,
         'faster': eval_faster_whisper,
         'huggingface': eval_whisper_huggingface,
-        'pipe': eval_whisper_pipeline,
+        'pipeline': eval_whisper_pipeline,
     }
     eval_type, kwargs = get_test_info(args)
     eval_options[eval_type](**kwargs)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     parser.add_argument('--pipeline',               help='use transformers pipeline',  type=int)
     parser.add_argument('--use_flash_attention_2',  help='pipeline options',           type=int)
     parser.add_argument('--use_bettertransformer',  help='pipeline options',           type=int)
-    parser.add_argument('--use_use_compile',        help='pipeline options',           type=int)
+    parser.add_argument('--use_compile',            help='pipeline options',           type=int)
     parser.add_argument('--assistant_model_path',   help='pipeline options',           type=str)
     parser.add_argument('--gpu',     default=0,     help='gpu id',                     type=str)
     args = parser.parse_args()
