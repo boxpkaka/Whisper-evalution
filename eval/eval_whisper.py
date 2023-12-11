@@ -127,25 +127,26 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                         predicted_ids = model.generate(input_features, task='transcribe', language=language)
                         transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
-                    cost_time = ct.cost_time
-                    memory_used = ct.cost_memory
-                    cpu_usage = ct.cpu_usage
+                cost_time = ct.cost_time
+                print(cost_time)
+                memory_used = ct.cost_memory
+                cpu_usage = ct.cpu_usage
 
-                    monitor.total_cost_time += cost_time
-                    monitor.memory.append(memory_used)
-                    monitor.max_cpu_usage = max(cpu_usage, monitor.max_cpu_usage)
+                monitor.total_cost_time += cost_time
+                monitor.memory.append(memory_used)
+                monitor.max_cpu_usage = max(cpu_usage, monitor.max_cpu_usage)
 
-                    for i in range(len(transcription)):
-                        monitor.total_audio_time += get_duration_from_idx(idx[i])
-                        monitor.refs.append(f'{ref[i]} ({idx[i]})')
-                        monitor.trans.append(f'{transcription[i]} ({idx[i]})')
-                        if i == 0:
-                            monitor.trans_with_info.append(f'batch-info: cost time: {cost_time} '
-                                                           f'used memory: {memory_used} '
-                                                           f'cpu usage: {cpu_usage}')
-                            monitor.trans_with_info.append(f'{transcription[i]} ({idx[i]}) ')
-                        else:
-                            monitor.trans_with_info.append(f'{transcription[i]} ({idx[i]})')
+                for i in range(len(transcription)):
+                    monitor.total_audio_time += get_duration_from_idx(idx[i])
+                    monitor.refs.append(f'{ref[i]} ({idx[i]})')
+                    monitor.trans.append(f'{transcription[i]} ({idx[i]})')
+                    if i == 0:
+                        monitor.trans_with_info.append(f'batch-info: cost time: {cost_time} '
+                                                       f'used memory: {memory_used} '
+                                                       f'cpu usage: {cpu_usage}')
+                        monitor.trans_with_info.append(f'{transcription[i]} ({idx[i]}) ')
+                    else:
+                        monitor.trans_with_info.append(f'{transcription[i]} ({idx[i]})')
     if lora_dir is not None:
         export_dir += lora_dir.split('/')[-1]
     save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
