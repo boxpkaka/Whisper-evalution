@@ -146,7 +146,8 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                             monitor.trans_with_info.append(f'{transcription[i]} ({idx[i]}) ')
                         else:
                             monitor.trans_with_info.append(f'{transcription[i]} ({idx[i]})')
-
+    if lora_dir is not None:
+        export_dir += lora_dir.split('/')[-1]
     save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
 
 
