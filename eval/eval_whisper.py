@@ -128,7 +128,6 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
                         transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
                 cost_time = ct.cost_time
-                print(cost_time)
                 memory_used = ct.cost_memory
                 cpu_usage = ct.cpu_usage
 
@@ -152,11 +151,11 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
     save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
 
 
-def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str,
-                          batch_size: int, language: str, device: torch.device) -> None:
-    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index), assistant_model_path='/data1/yumingdong/model/huggingface/whisper-small')
+def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str, batch_size: int, num_workers: int,
+                          language: str, device: torch.device,  assistant_model_path: str) -> None:
+    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index), assistant_model_path=assistant_model_path)
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
-    dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, type='dict')
+    dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, num_workers=num_workers, return_type='dict',)
     print('=' * 100)
 
     pynvml.nvmlInit()

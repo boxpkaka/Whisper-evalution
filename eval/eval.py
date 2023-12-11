@@ -43,7 +43,8 @@ def eval_whisper(args):
     elif re.match('m-ctc', model_name) is not None:
         eval_mms(model_path, dataset_dir, export_dir, device)
     elif args.pipeline:
-        eval_whisper_pipeline(model_path, dataset_dir, export_dir, args.batch_size, args.language, device)
+        eval_whisper_pipeline(model_path, dataset_dir, export_dir, args.batch_size, args.num_workers,
+                              args.language, device, args.assistant_model_path)
     else:
         eval_whisper_huggingface(model_path, dataset_dir, export_dir, args.batch_size, args.language,
                                  args.num_workers, device, args.lora_dir)
@@ -62,6 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('--compute_type',           help='auto/int8/int8_float16...',  type=str)
     parser.add_argument('--num_workers',            help='workers nums of ct2model',   type=int)
     parser.add_argument('--pipeline',               help='use transformers pipeline',  type=bool)
+    parser.add_argument('--assistant_model_path',   help='pipeline assistant model',   type=str)
     parser.add_argument('--gpu',     default=0,     help='gpu id',                     type=str)
     args = parser.parse_args()
 

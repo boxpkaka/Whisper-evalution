@@ -51,7 +51,7 @@ def get_pipeline(model_path: str, batch_size: int, gpu: str, use_flash_attention
                     tokenizer=processor.tokenizer,
                     feature_extractor=processor.feature_extractor,
                     max_new_tokens=128,
-                    chunk_length_s=30,
+                    chunk_length_s=2,
                     batch_size=batch_size,
                     torch_dtype=torch_dtype,
                     generate_kwargs=generate_kwargs_pipeline,
