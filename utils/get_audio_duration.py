@@ -1,3 +1,5 @@
+import soundfile
+
 def get_duration_from_idx(idx: str) -> float:
     splited = idx.split('-')
     ed = float(splited[-2])
@@ -8,6 +10,7 @@ def get_duration_from_idx(idx: str) -> float:
 
 if __name__ == '__main__':
     idx = '1000Cantonese00000978-0000000-0004715-S'
+
     print(get_duration_from_idx(idx))
 
 

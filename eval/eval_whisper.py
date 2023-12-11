@@ -152,8 +152,13 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
 
 
 def eval_whisper_pipeline(model_path: str, dataset_dir: str, export_dir: str, batch_size: int, num_workers: int,
-                          language: str, device: torch.device,  assistant_model_path: str) -> None:
-    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index), assistant_model_path=assistant_model_path)
+                          language: str, device: torch.device, use_flash_attention_2=None,
+                          use_bettertransformer=None, use_compile=None, assistant_model_path=None) -> None:
+    pipe = get_pipeline(model_path, batch_size, gpu=str(device.index),
+                        use_flash_attention_2=use_flash_attention_2,
+                        use_bettertransformer=use_bettertransformer,
+                        use_compile=use_compile,
+                        assistant_model_path=assistant_model_path)
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
     dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, num_workers=num_workers, return_type='dict',)
     print('=' * 100)
