@@ -38,8 +38,9 @@ class BaseDataloader(Dataset):
         text_file = get_file(text_path)
         text_dic = {}
         for line in text_file:
-            idx, text = line.split(' ')
-            text = text.strip()
+            line = line.split(' ')
+            idx = line[0]
+            text = ''.join(line[1:]).strip()
             text_dic[idx] = text
         return audio_file, text_dic
 
