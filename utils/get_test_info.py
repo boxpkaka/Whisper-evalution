@@ -48,8 +48,10 @@ def get_test_info(args):
     elif re.match('faster', model_name) is not None:
         test_kwargs['use_cpu'] = True if args.use_cpu else False
         test_kwargs['compute_type'] = args.compute_type
+        test_kwargs.pop('batch_size')
         test_info['use_cpu'] = test_kwargs['use_cpu']
         test_info['compute_type'] = test_kwargs['compute_type']
+        test_info.pop('batch size')
         res = ['faster', test_kwargs]
     elif args.pipeline >= 1:
         test_kwargs['use_flash_attention_2'] = True if args.use_flash_attention_2 > 0 else False
