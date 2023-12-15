@@ -1,10 +1,9 @@
 import os
-import re
 import torch
 from utils.get_save_file import get_json
 
 
-def get_test_info(args):
+def get_eval_info(args):
     config = get_json(args.config)
     model_type = args.model_type
     model_dir = os.path.join(config['model_dir'], model_type)
@@ -43,9 +42,9 @@ def get_test_info(args):
         'device': device
     }
 
-    if re.match('openai', model_name) is not None:
+    if model_type == 'openai':
         res = ['openai', test_kwargs]
-    elif re.match('faster', model_name) is not None:
+    elif model_type == 'ct2':
         test_kwargs['use_cpu'] = True if args.use_cpu else False
         test_kwargs['compute_type'] = args.compute_type
         test_kwargs.pop('batch_size')

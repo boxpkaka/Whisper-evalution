@@ -4,11 +4,16 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, Aut
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
 
 
-def load_whisper(path: str):
-    whisper = WhisperForConditionalGeneration.from_pretrained(path, local_files_only=True)
-    whisper_processor = WhisperProcessor.from_pretrained(path, local_files_only=True)
+def load_hf_whisper(path: str):
+    whisper = WhisperForConditionalGeneration.from_pretrained(path,
+                                                              local_files_only=True,
+                                                              use_flash_attention_2=True)
+    return whisper
 
-    return whisper, whisper_processor
+
+def load_hf_processor(path: str):
+    whisper_processor = WhisperProcessor.from_pretrained(path, local_files_only=True)
+    return whisper_processor
 
 
 def get_pipeline(model_path: str, batch_size: int, gpu: str, use_flash_attention_2=None,

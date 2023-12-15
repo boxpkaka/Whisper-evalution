@@ -2,18 +2,22 @@ import torch
 import whisper
 import os
 import pynvml
+from accelerate import Accelerator, InitProcessGroupKwargs
 from tqdm import tqdm
 from faster_whisper import WhisperModel
 from peft import PeftConfig, inject_adapter_in_model
-
 from dataloader import get_dataloader
+
 from eval.eval_with_trn import eval_with_trn
 from norm.norm_with_trn import normalize_cantonese
-from utils.count_model import count_model
-from utils.get_save_file import save_file
-from utils.count_usage import StepCounter, TrainMonitor
-from utils.get_audio_duration import get_duration_from_idx
-from model.get_model import get_pipeline, load_whisper
+from utils import (
+    count_model,
+    save_file,
+    StepCounter,
+    TrainMonitor,
+    get_duration_from_idx
+)
+from model.get_model import get_pipeline, load_hf_whisper, load_hf_processor
 
 
 def save_eval(export_dir, refs, trans, trans_with_time=None):
@@ -26,25 +30,46 @@ def save_eval(export_dir, refs, trans, trans_with_time=None):
     eval_with_trn(export_dir)
 
 
-def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, language: str,
+def eval_whisper_openai(model_path: str, dataset_dir: str, export_dir: str, batch_size: int, language: str,
                         num_workers: int, device: torch.device):
-    dataloader = get_dataloader(dataset_dir, batch_size=1, num_workers=num_workers, shuffle=False, return_type='path')
     model = whisper.load_model(os.path.join(model_path, 'model.pt'), device=device)
+    processor = load_hf_processor('/data1/yumingdong/model/huggingface/whisper-large-v3')
+    dataloader = get_dataloader(dataset_dir, batch_size=1, num_workers=num_workers,
+                                shuffle=False, return_type='path', processor=processor)
     param = count_model(model)
     print(param)
 
-    refs = []
-    trans = []
-    for batch in tqdm(dataloader):
-        data_path, ref, idx = batch
-        data_path = data_path[0]
-        ref = ref[0]
-        idx = idx[0]
-        transcription = model.transcribe(data_path, language=language)['text']
-        refs.append(f'{ref} ({idx})')
-        trans.append(f'{transcription} ({idx})')
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
 
-    save_eval(export_dir, refs, trans)
+    with TrainMonitor() as monitor:
+        for batch in tqdm(dataloader):
+            path, ref, idx = batch
+            path = path[0]
+            ref = ref[0]
+            idx = idx[0]
+
+            with StepCounter(handle) as ct:
+                transcription = model.transcribe(path, language=language)['text']
+                print(transcription)
+            cost_time = ct.cost_time
+            memory_used = ct.cost_memory
+            cpu_usage = ct.cpu_usage
+
+            monitor.total_cost_time += cost_time
+            monitor.memory.append(memory_used)
+            monitor.max_cpu_usage = max(cpu_usage, monitor.max_cpu_usage)
+            monitor.total_audio_time += get_duration_from_idx(idx)
+
+            monitor.refs.append(f'{ref} ({idx})')
+            monitor.trans.append(f'{transcription} ({idx})')
+            monitor.trans_with_info.append(f'{transcription} ({idx})'
+                                           f'batch-info: cost time: {cost_time} '
+                                           f'used memory: {memory_used} '
+                                           f'cpu usage: {cpu_usage}')
+
+    export_dir += 'openai'
+    save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
 
 
 def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, language: str, use_cpu: bool,
@@ -101,7 +126,8 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
 
 def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str, batch_size: int,
                              language: str, num_workers: int, device: torch.device, lora_dir=None) -> None:
-    model, processor = load_whisper(model_path)
+    model = load_hf_whisper(model_path)
+    processor = load_hf_processor(model_path)
     if lora_dir is not None:
         peft_config = PeftConfig.from_pretrained(lora_dir)
         model = inject_adapter_in_model(peft_config, model)
@@ -121,7 +147,7 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
             for batch in tqdm(dataloader):
                 input_features, ref, idx = batch
                 input_features = input_features.to(device)
-
+                generate_fn = model.module.generate if accelerator.num_processes > 1 else model.generate
                 with StepCounter(handle) as ct:
                     with torch.cuda.amp.autocast(enabled=True):
                         predicted_ids = model.generate(input_features, task='transcribe', language=language)

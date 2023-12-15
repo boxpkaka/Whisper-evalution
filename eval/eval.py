@@ -1,9 +1,6 @@
-import re
-import os
 import argparse
 from eval.eval_whisper import *
-from utils.get_test_info import get_test_info
-from utils.get_save_file import get_json
+from utils import get_eval_info
 
 
 def eval_whisper(args):
@@ -13,7 +10,7 @@ def eval_whisper(args):
         'huggingface': eval_whisper_huggingface,
         'pipeline': eval_whisper_pipeline,
     }
-    eval_type, kwargs = get_test_info(args)
+    eval_type, kwargs = get_eval_info(args)
     eval_options[eval_type](**kwargs)
 
 
