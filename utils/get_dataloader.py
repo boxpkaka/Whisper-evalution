@@ -71,6 +71,8 @@ class DataLoaderFeatures(BaseDataloader):
         idx, audio_path = self.audio_file[index].split(' ')
         wav, sr = librosa.load(audio_path)
         wav, sr = self._resample(wav, sr)
+        if wav.shape[0] / sr > 30:
+            print(f'Audio: {idx} length over 30s')
         features = self.processor(wav, sampling_rate=sr, return_tensors="pt").input_features
         ref = self.text_dic[idx]
         return features, ref, idx
@@ -81,6 +83,8 @@ class DataLoaderDict(BaseDataloader):
         idx, audio_path = self.audio_file[index].split()
         wav, sr = librosa.load(audio_path)
         wav, sr = self._resample(wav, sr)
+        if wav.shape[0] / sr > 30:
+            print(f'Audio: {idx} length over 30s')
         ref = self.text_dic[idx]
         item = {"sampling_rate": sr, "raw": wav}
         return item, ref, idx

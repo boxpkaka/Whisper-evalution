@@ -1,11 +1,10 @@
 import os
 import re
 import opencc
+from .num2char import num_to_char
 import multiprocessing
-from typing import List
 from tqdm import tqdm
-from norm.num2char import num_to_char
-from utils.get_save_file import get_file, save_file
+from utils import get_file, save_file
 
 '''
 

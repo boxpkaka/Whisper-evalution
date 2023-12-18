@@ -1,5 +1,10 @@
 import argparse
-from eval.eval_whisper import *
+from .eval_whisper import (
+    eval_whisper_openai,
+    eval_faster_whisper,
+    eval_whisper_huggingface,
+    eval_whisper_pipeline
+)
 from utils import get_eval_info
 
 
