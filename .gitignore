@@ -4,5 +4,5 @@ exp/
 eval/__pycache__
 test.py
 eval.sh
-eval/model_data_list.json
+model_data_list.json
 accelerate_config.yaml
