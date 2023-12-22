@@ -1,14 +1,16 @@
 import platform
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, AutoModelForCausalLM
-from transformers import WhisperForConditionalGeneration
 
 
-def load_hf_whisper(path: str, use_flash_attention_2: bool):
-    whisper = WhisperForConditionalGeneration.from_pretrained(path,
-                                                              local_files_only=True,
-                                                              use_flash_attention_2=use_flash_attention_2,
-                                                              torch_dtype=torch.bfloat16)
+def load_hf_whisper(path: str, use_flash_attention_2: bool, torch_dtype: torch.dtype):
+    flash_attn = 'flash_attention_2' if use_flash_attention_2 else None
+    whisper = AutoModelForSpeechSeq2Seq.from_pretrained(path,
+                                                        local_files_only=True,
+                                                        use_safetensors=True,
+                                                        attn_implementation=flash_attn,
+                                                        torch_dtype=torch_dtype,
+                                                        )
     return whisper
 
 

@@ -133,9 +133,10 @@ def eval_whisper_huggingface(
         num_workers: int,
         device: torch.device,
         lora_dir=None,
-        use_flash_attention_2=False) -> None:
+        use_flash_attention_2=False,
+        torch_dtype=torch.float32) -> None:
 
-    model = load_hf_whisper(model_path, use_flash_attention_2)
+    model = load_hf_whisper(model_path, use_flash_attention_2, torch_dtype)
     processor = load_hf_processor(model_path)
 
     if lora_dir is not None:
@@ -149,13 +150,24 @@ def eval_whisper_huggingface(
 
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
-
     model.to(device)
+
+    preheat = True
+    if preheat is True:
+        print('Start preheat...')
+        for _ in tqdm(range(3)):
+            for batch in tqdm(dataloader):
+                input_features = batch[0].to(device).to(torch_dtype)
+                with torch.cuda.amp.autocast(enabled=True):
+                    _ = model.generate(input_features, task='transcribe', language=language)
+                break
+
+    print('Start eval...')
     with TrainMonitor() as monitor:
         with torch.no_grad():
             for batch in tqdm(dataloader):
                 input_features, ref, idx = batch
-                input_features = input_features.to(device)
+                input_features = input_features.to(device).to(torch_dtype)
                 generate_fn = model.generate
                 with StepCounter(handle) as ct:
                     with torch.cuda.amp.autocast(enabled=True):

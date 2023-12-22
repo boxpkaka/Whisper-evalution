@@ -43,11 +43,11 @@ def infer_hf(model_path: str, audio_path: List, device: torch.device):
 
 
 if __name__ == '__main__':
-    model_path = '/data1/yumingdong/model/huggingface/whisper-large-v3'
+    model_path = '/data1/yumingdong/model/finetuned/whisper-large-v3-lora50+50-simplified-29223'
 
     audio_path = [
-        '/data2/yumingdong/wavs/test_1000Cantonese/1000Cantonese00000334-0000000-0003894-S.wav',
-        '/data2/yumingdong/wavs/test_1000Cantonese/1000Cantonese00000668-0000000-0002964-S.wav'
+        '/data1/fangcheng1050/workspace/myproject/test/can/wavs_all/IB00194-79114616-20230302132500.wav',
+        '/data1/fangcheng1050/workspace/myproject/test/can/wavs_all/IB00194-79111820-20230301104156.wav'
     ]
     device = torch.device('cuda:7')
 

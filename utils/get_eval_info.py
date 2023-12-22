@@ -2,6 +2,9 @@ import os
 import torch
 from utils.get_save_file import get_json
 
+DTYPE_MAP = {
+    'fp16': torch.float16,
+    'bf16': torch.bfloat16}
 
 def get_eval_info(args):
     config = get_json(args.config)
@@ -70,6 +73,8 @@ def get_eval_info(args):
             test_info['export'] = test_kwargs['export_dir']
         test_kwargs['use_flash_attention_2'] = True if args.use_flash_attention_2 > 0 else False
         test_info['use_flash_attention_2'] = test_kwargs['use_flash_attention_2']
+        test_kwargs['torch_dtype'] = DTYPE_MAP[args.torch_dtype]
+        test_info['torch_dtype'] = test_kwargs['torch_dtype']
         res = ['huggingface', test_kwargs]
 
     max_length = max([len(k) for k in test_info.keys()])
