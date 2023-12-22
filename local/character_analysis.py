@@ -11,7 +11,7 @@ format:
 '''
 
 
-def analysis(text_path: str):
+def analysis(text_path: str) -> None:
     converter_tradition = opencc.OpenCC('s2t.json')
     converter_hk = opencc.OpenCC('s2hk.json')
     converter_sim = opencc.OpenCC('t2s.json')

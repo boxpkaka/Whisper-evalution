@@ -1,6 +1,5 @@
 import os
 import sys
-from typing import List
 from utils.get_save_file import get_file, save_file
 
 '''
