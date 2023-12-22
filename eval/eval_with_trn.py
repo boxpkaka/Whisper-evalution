@@ -1,6 +1,6 @@
-from base_utils import evaluation
+from utils import evaluation
 from pathlib import Path
-from base_utils.evaluation import SplitType
+from utils.evaluation import SplitType
 from base_utils.evaluation import write_trn_trx_list
 import sys
 
@@ -24,3 +24,8 @@ def eval_with_trn(path):
     # write_trn_trx_list(std_map.items(), std_path)
     # write_trn_trx_list(reg_map.items(), reg_path)
     # eval_obj._gen_dtl_most_wrong(std_path, reg_path, SplitType.WORD, 100)
+
+
+if __name__ == '__main__':
+    eval_with_trn('/data1/yumingdong/whisper/whisper-eval/exp/whisper-large-v3-lora700+700-90000-test_datatang500h')
+

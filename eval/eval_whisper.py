@@ -3,7 +3,6 @@ import whisper
 import os
 import pynvml
 from datetime import timedelta
-from accelerate import Accelerator, InitProcessGroupKwargs
 from tqdm import tqdm
 from faster_whisper import WhisperModel
 from peft import PeftConfig, inject_adapter_in_model
@@ -125,15 +124,20 @@ def eval_faster_whisper(model_path: str, dataset_dir: str, export_dir: str, lang
     save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
 
 
-def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str, batch_size: int,
-                             language: str, num_workers: int, device: torch.device, lora_dir=None) -> None:
-    model = load_hf_whisper(model_path)
+def eval_whisper_huggingface(
+        model_path: str,
+        dataset_dir: str,
+        export_dir: str,
+        batch_size: int,
+        language: str,
+        num_workers: int,
+        device: torch.device,
+        lora_dir=None,
+        use_flash_attention_2=False) -> None:
+
+    model = load_hf_whisper(model_path, use_flash_attention_2)
     processor = load_hf_processor(model_path)
-    kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=7200))
-    accelerator = Accelerator(
-        mixed_precision='bf16',
-        kwargs_handlers=[kwargs],
-    )
+
     if lora_dir is not None:
         peft_config = PeftConfig.from_pretrained(lora_dir)
         model = inject_adapter_in_model(peft_config, model)
@@ -146,14 +150,13 @@ def eval_whisper_huggingface(model_path: str, dataset_dir: str, export_dir: str,
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(device.index)
 
-    model.cuda()
-    model, dataloader = accelerator.prepare(model, dataloader)
+    model.to(device)
     with TrainMonitor() as monitor:
         with torch.no_grad():
             for batch in tqdm(dataloader):
                 input_features, ref, idx = batch
                 input_features = input_features.to(device)
-                generate_fn = model.module.generate if accelerator.num_processes > 1 else model.generate
+                generate_fn = model.generate
                 with StepCounter(handle) as ct:
                     with torch.cuda.amp.autocast(enabled=True):
                         predicted_ids = generate_fn(input_features, task='transcribe', language=language)

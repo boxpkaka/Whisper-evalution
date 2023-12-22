@@ -20,7 +20,7 @@ def norm_single_sentence(sentence: str) -> str:
     # filter special symbol
     sentence = re.sub(r'[^\w\s]', '', sentence).replace(' ', '')
     # simplified -> traditional Chinese
-    sentence = converter.convert(sentence).lower()
+    sentence = converter.convert(sentence)
     # lower English character
     sentence = sentence.lower()
     # digit -> Chinese character
@@ -35,10 +35,10 @@ def single_normalization(args):
         trans_s = trans[i].strip().split('(')
         refs_s = refs[i].strip().split('(')
 
-        trans_idx = trans_s[1][: -1]
-        refs_idx = refs_s[1][: -1]
+        trans_idx = trans_s[-1][: -1]
+        refs_idx = refs_s[-1][: -1]
 
-        trans_norm = norm_single_sentence(trans_s[0])
+        trans_norm = norm_single_sentence(''.join(trans_s[:-1]))
         refs_norm = norm_single_sentence(refs_s[0])
 
         trans_result.append(f'{trans_norm} ({trans_idx})')
@@ -72,5 +72,5 @@ def normalize_cantonese(path: str) -> None:
 
 
 if __name__ == '__main__':
-    file_dir = '/data1/yumingdong/project/exp/openai-whisper-large-v3-data_test_hk_can'
+    file_dir = '/data1/yumingdong/whisper/whisper-eval/exp/whisper-large-v3-lora700+700-90000-test_datatang500h'
     normalize_cantonese(file_dir)

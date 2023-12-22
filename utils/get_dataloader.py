@@ -30,7 +30,7 @@ class BaseDataloader(Dataset):
     def __init__(self, data_dir, **kwargs):
         self.data_dir = data_dir
         self.audio_file, self.text_dic = self._load_data()
-
+        print(self.text_dic)
     def _load_data(self) -> Tuple[List, Dict]:
         audio_path = os.path.join(self.data_dir, 'wav.scp')
         text_path = os.path.join(self.data_dir, 'text')
@@ -108,23 +108,23 @@ def collate_fn_dict(batch):
 
 
 if __name__ == "__main__":
-    audio_path = '/data2/yumingdong/data/test_1000Cantonese'
+    audio_path = '/data2/yumingdong/data/test_datatang500h'
     model_path = '/data1/yumingdong/model/huggingface/whisper-small'
-    from transformers import WhisperProcessor
+    from transformers import AutoProcessor
     from utils.get_audio_duration import get_duration_from_idx
-    processor = WhisperProcessor.from_pretrained(model_path)
+    processor = AutoProcessor.from_pretrained(model_path)
     dataloader = get_dataloader(audio_path, batch_size=32, num_workers=16, shuffle=False, return_type='feature', processor=processor)
 
-    total = 0
-    max_len = 0
-    for batch in tqdm.tqdm(dataloader):
-        data, ref, idx = batch
-
-        for i in idx:
-            total += get_duration_from_idx(i)
-            max_len = max(max_len, get_duration_from_idx(i))
-    print(f'total: {total}')
-    print(max_len)
+    # total = 0
+    # max_len = 0
+    # for batch in tqdm.tqdm(dataloader):
+    #     data, ref, idx = batch
+    #
+    #     for i in idx:
+    #         total += get_duration_from_idx(i)
+    #         max_len = max(max_len, get_duration_from_idx(i))
+    # print(f'total: {total}')
+    # print(max_len)
 
 
 

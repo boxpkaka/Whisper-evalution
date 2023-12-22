@@ -68,6 +68,8 @@ def get_eval_info(args):
             test_kwargs['export_dir'] += '-' + args.lora_dir.split('/')[-2]
             test_info['LoRA dir'] = test_kwargs['lora_dir']
             test_info['export'] = test_kwargs['export_dir']
+        test_kwargs['use_flash_attention_2'] = True if args.use_flash_attention_2 > 0 else False
+        test_info['use_flash_attention_2'] = test_kwargs['use_flash_attention_2']
         res = ['huggingface', test_kwargs]
 
     max_length = max([len(k) for k in test_info.keys()])

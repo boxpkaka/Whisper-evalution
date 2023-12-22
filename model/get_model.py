@@ -4,10 +4,10 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, Aut
 from transformers import WhisperForConditionalGeneration
 
 
-def load_hf_whisper(path: str):
+def load_hf_whisper(path: str, use_flash_attention_2: bool):
     whisper = WhisperForConditionalGeneration.from_pretrained(path,
                                                               local_files_only=True,
-                                                              use_flash_attention_2=True,
+                                                              use_flash_attention_2=use_flash_attention_2,
                                                               torch_dtype=torch.bfloat16)
     return whisper
 
