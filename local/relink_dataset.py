@@ -3,15 +3,14 @@ import sys
 from utils.get_save_file import get_file, save_file
 
 '''
-修改wav.scp中的音频目录
+将wav.scp中的音频路径修改到另一目录
 '''
 
 
 def main():
     root_dir = sys.argv[1]  # root dir/wav.scp|text|text.fmt
-    export_dir = sys.argv[2]  # -> export_dir/wav.scp
-    data_tgt_dir = sys.argv[3]  # data_tgt_dir/1.wav, ..., x.wav
-
+    data_tgt_dir = sys.argv[2]  # data_tgt_dir/1.wav, ..., x.wav
+    export_dir = sys.argv[3] if len(sys.argv) > 3 else root_dir
     generate(root_dir, export_dir, data_tgt_dir)
 
 

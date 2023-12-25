@@ -36,7 +36,7 @@ def eval_whisper_pipeline(
                         assistant_model_path=assistant_model_path,
                         torch_dtype=torch_dtype)
     generate_kwargs = {"task": 'transcribe', "num_beams": 1, "language": language}
-    dataloader = get_dataloader(dataset_dir, batch_size, shuffle=False, num_workers=num_workers, return_type='dict')
+    dataloader = get_dataloader(dataset_dir, 64, shuffle=False, num_workers=num_workers, return_type='dict')
     print('=' * 100)
 
     pynvml.nvmlInit()
@@ -51,8 +51,6 @@ def eval_whisper_pipeline(
         ref_set.extend(ref)
         idx_set.extend(idx)
 
-    _ = pipe(data_set[:100], return_timestamps=False, generate_kwargs=generate_kwargs)
-    print(data_set[:100])
     with TrainMonitor() as monitor:
         with StepCounter(handle) as ct:
             result = pipe(data_set, return_timestamps=False, generate_kwargs=generate_kwargs)

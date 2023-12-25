@@ -1,11 +1,10 @@
 import os
-import tqdm
 import librosa
 import torch
 from typing import Dict, Tuple, List
-
+from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from utils import get_file
+from get_save_file import get_file
 
 
 def get_dataloader(audio_dir: str, batch_size: int, shuffle: bool, num_workers: int, return_type: str, processor=None):
@@ -28,26 +27,38 @@ def get_dataloader(audio_dir: str, batch_size: int, shuffle: bool, num_workers: 
 class BaseDataloader(Dataset):
     def __init__(self, data_dir, **kwargs):
         self.data_dir = data_dir
-        self.audio_file, self.text_dic = self._load_data()
+        self.data_list = self._load_data()
 
-    def _load_data(self) -> Tuple[List, Dict]:
+    def _load_data(self) -> List:
         audio_path = os.path.join(self.data_dir, 'wav.scp')
         text_path = os.path.join(self.data_dir, 'text')
         audio_file = get_file(audio_path)
         text_file = get_file(text_path)
-        text_dic = {}
+        idx_dic = {}
+        data_list = []
+
         for line in text_file:
             line = line.split(' ')
             idx = line[0]
             text = ''.join(line[1:]).strip()
-            text_dic[idx] = text
-        return audio_file, text_dic
+            idx_dic[idx] = text
+
+        for line in audio_file:
+            idx, path = line.split(' ')
+            data_list.append({'idx': idx, 'audio_path': path, 'text': idx_dic[idx]})
+
+        return data_list
 
     def __len__(self):
-        return len(self.audio_file)
+        return len(self.data_list)
 
     @staticmethod
-    def _resample(wav, sr, tgt_sr=16000):
+    def _load_resample(audio_path: str,  tgt_sr=16000) -> Tuple:
+        try:
+            wav, sr = librosa.load(audio_path)
+        except Exception as e:
+            print(f'Error on {audio_path}: {e}')
+            return None, None
         if sr != 16000:
             wav = librosa.resample(wav, orig_sr=sr, target_sr=tgt_sr)
             sr = tgt_sr
@@ -56,8 +67,9 @@ class BaseDataloader(Dataset):
 
 class DataLoaderPath(BaseDataloader):
     def __getitem__(self, index):
-        idx, audio_path = self.audio_file[index].split()
-        ref = self.text_dic[idx]
+        audio_path = self.data_list[index]['audio_path']
+        ref = self.data_list[index]['text']
+        idx = self.data_list[index]['idx']
         return audio_path, ref, idx
 
 
@@ -67,58 +79,61 @@ class DataLoaderFeatures(BaseDataloader):
         self.processor = processor
 
     def __getitem__(self, index):
-        idx, audio_path = self.audio_file[index].split(' ')
-        wav, sr = librosa.load(audio_path)
-        wav, sr = self._resample(wav, sr)
+        audio_path = self.data_list[index]['audio_path']
+        ref = self.data_list[index]['text']
+        idx = self.data_list[index]['idx']
+
+        wav, sr = self._load_resample(audio_path)
+        if wav is None:
+            return None
+
         if wav.shape[0] / sr > 30:
             print(f'Audio: {idx} length over 30s')
         features = self.processor(wav, sampling_rate=sr, return_tensors="pt").input_features
-        ref = self.text_dic[idx]
+
         return features, ref, idx
 
 
 class DataLoaderDict(BaseDataloader):
     def __getitem__(self, index):
-        idx, audio_path = self.audio_file[index].split()
-        wav, sr = librosa.load(audio_path)
-        wav, sr = self._resample(wav, sr)
+        audio_path = self.data_list[index]['audio_path']
+        ref = self.data_list[index]['text']
+        idx = self.data_list[index]['idx']
+        wav, sr = self._load_resample(audio_path)
+        if wav is None:
+            return None
         if wav.shape[0] / sr > 30:
             print(f'Audio: {idx} length over 30s')
-        ref = self.text_dic[idx]
         item = {"sampling_rate": sr, "raw": wav}
         return item, ref, idx
 
 
 def collate_fn_features(batch):
-    features = [i[0] for i in batch]
-    ref = [i[1] for i in batch]
-    idx = [i[2] for i in batch]
+    batch = [item for item in batch if item is not None]
+    features, ref, idx = zip(*batch)
+
     features = tuple(features)
     features = torch.cat(features, dim=0)
     return features, list(ref), list(idx)
 
 
 def collate_fn_dict(batch):
-    item = [i[0] for i in batch]
-    ref = [i[1] for i in batch]
-    idx = [i[2] for i in batch]
+    batch = [item for item in batch if item is not None]
+    item, ref, idx = zip(*batch)
 
     return item, ref, idx
 
 
 if __name__ == "__main__":
-    audio_path = '/data2/yumingdong/data/test_kejiyuan'
+    audio_path = '/data2/yumingdong/data/deploy_test-cantonese'
     model_path = '/data1/yumingdong/model/huggingface/whisper-small'
     from transformers import AutoProcessor
-    from utils.get_audio_duration import get_duration_from_idx
+
     processor = AutoProcessor.from_pretrained(model_path)
     dataloader = get_dataloader(audio_path, batch_size=32, num_workers=16, shuffle=False, return_type='feature', processor=processor)
 
-    for _ in range(5):
-        for batch in dataloader:
-            data, ref, idx = batch
-            print(idx)
-            break
+    for batch in tqdm(dataloader):
+        data, ref, idx = batch
 
 
 
