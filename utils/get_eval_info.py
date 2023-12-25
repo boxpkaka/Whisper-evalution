@@ -47,14 +47,17 @@ def get_eval_info(args):
 
     if model_type == 'openai':
         res = ['openai', test_kwargs]
+
     elif model_type == 'ct2':
         test_kwargs['use_cpu'] = True if args.use_cpu else False
         test_kwargs['compute_type'] = args.compute_type
         test_kwargs.pop('batch_size')
         test_info['use_cpu'] = test_kwargs['use_cpu']
         test_info['compute_type'] = test_kwargs['compute_type']
+
         test_info.pop('batch size')
         res = ['faster', test_kwargs]
+
     elif args.pipeline >= 1:
         test_kwargs['use_flash_attention_2'] = True if args.use_flash_attention_2 > 0 else False
         test_kwargs['use_bettertransformer'] = True if args.use_bettertransformer > 0 else False
@@ -64,7 +67,11 @@ def get_eval_info(args):
         test_info['use_bettertransformer'] = test_kwargs['use_bettertransformer']
         test_info['use_compile'] = test_kwargs['use_compile']
         test_info['assistant_model_path'] = test_kwargs['assistant_model_path']
+        test_kwargs['torch_dtype'] = DTYPE_MAP[args.torch_dtype]
+        test_info['torch_dtype'] = test_kwargs['torch_dtype']
+
         res = ['pipeline', test_kwargs]
+
     else:
         if args.lora_dir != 'None':
             test_kwargs['lora_dir'] = args.lora_dir
@@ -75,6 +82,7 @@ def get_eval_info(args):
         test_info['use_flash_attention_2'] = test_kwargs['use_flash_attention_2']
         test_kwargs['torch_dtype'] = DTYPE_MAP[args.torch_dtype]
         test_info['torch_dtype'] = test_kwargs['torch_dtype']
+
         res = ['huggingface', test_kwargs]
 
     max_length = max([len(k) for k in test_info.keys()])
@@ -83,6 +91,4 @@ def get_eval_info(args):
         print(f'{k} ' + padding * ' ' + f'{v}')
 
     return res
-
-
 

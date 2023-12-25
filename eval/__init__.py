@@ -1,0 +1,4 @@
+from eval.whisper_hf import eval_whisper_huggingface
+from eval.whisper_ct2 import eval_faster_whisper
+from eval.whisper_pipe import eval_whisper_pipeline
+from eval.whisper_openai import eval_whisper_openai

@@ -31,7 +31,8 @@ def analysis(text_path: str) -> None:
             _, text = line.split(' ')
         else:
             # Transcription
-            text, _ = line.split(' ')
+            line_split = line.split(' ')
+            text = ''.join(line_split[:-1])
         text_tradition = converter_tradition.convert(text)
         text_hk = converter_hk.convert(text)
         text_sim = converter_sim.convert(text)
@@ -41,10 +42,15 @@ def analysis(text_path: str) -> None:
         hk.append(text_hk)
         sim.append(text_sim)
 
-    compare_orig_tradition = cer(orig, tradition)
-    compare_orig_hk = cer(orig, hk)
-    compare_orig_sim = cer(orig, sim)
-    compare_tradition_hk = cer(tradition, hk)
+        compared = cer(text, text_tradition)
+        if compared > 0:
+            print(text)
+            print(text_sim)
+
+    compare_orig_tradition = cer(orig, tradition) * 100
+    compare_orig_hk = cer(orig, hk) * 100
+    compare_orig_sim = cer(orig, sim) * 100
+    compare_tradition_hk = cer(tradition, hk) * 100
 
     print(f'origin    -> tradition : {compare_orig_tradition}')
     print(f'origin    -> simplified: {compare_orig_hk}')

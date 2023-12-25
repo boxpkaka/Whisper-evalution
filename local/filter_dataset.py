@@ -15,7 +15,7 @@ def filter(data_dir: str) -> None:
             continue
 
         idx, path = line.split(' ')
-        res[idx]=[path]
+        res[idx] = [path]
 
     for line in text_file:
         if len(line.split(' ')) < 2:

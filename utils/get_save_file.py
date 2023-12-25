@@ -1,6 +1,7 @@
 from typing import List, Dict
 import json
 
+
 def get_file(path: str) -> List:
     with open(path, 'r', encoding='utf-8') as f:
         file = f.readlines()
