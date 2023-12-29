@@ -3,12 +3,12 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, AutoModelForCausalLM
 
 
-def load_hf_whisper(path: str, use_flash_attention_2: bool, torch_dtype: torch.dtype):
-    flash_attn = 'flash_attention_2' if use_flash_attention_2 else None
+def load_hf_whisper(path: str, use_flash_attention_2=False, torch_dtype=torch.float32):
+    flash_attn = True if use_flash_attention_2 else False
     whisper = AutoModelForSpeechSeq2Seq.from_pretrained(path,
                                                         local_files_only=True,
                                                         use_safetensors=True,
-                                                        attn_implementation=flash_attn,
+                                                        use_flash_attention_2=flash_attn,
                                                         torch_dtype=torch_dtype)
     return whisper
 

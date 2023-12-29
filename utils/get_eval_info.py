@@ -20,8 +20,8 @@ def get_eval_info(args):
     export_postfix = dataset_dir.split('/')[-1]
     if dataset_dir.split('/')[-1] in ['train', 'dev', 'test']:
         export_postfix, split = dataset_dir.split('/')[-2:]
-        export_postfix = f'{split}-{export_postfix}'
-    export_dir = os.path.join(config['export_dir'], model_name + '-' + export_postfix)
+        export_postfix = f'{split}_{export_postfix}'
+    export_dir = os.path.join(config['export_dir'], model_name, export_postfix)
 
     device = torch.device(f'cuda:{args.gpu}')
 
@@ -82,6 +82,8 @@ def get_eval_info(args):
         test_info['use_flash_attention_2'] = test_kwargs['use_flash_attention_2']
         test_kwargs['torch_dtype'] = DTYPE_MAP[args.torch_dtype]
         test_info['torch_dtype'] = test_kwargs['torch_dtype']
+        test_kwargs['preheat'] = True if args.preheat > 0 else False
+        test_info['preheat'] = test_kwargs['preheat']
 
         res = ['huggingface', test_kwargs]
 

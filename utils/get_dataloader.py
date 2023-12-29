@@ -4,7 +4,7 @@ import torch
 from typing import Dict, Tuple, List
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from get_save_file import get_file
+from .get_save_file import get_file
 
 
 def get_dataloader(audio_dir: str, batch_size: int, shuffle: bool, num_workers: int, return_type: str, processor=None):
@@ -121,7 +121,7 @@ def collate_fn_dict(batch):
     batch = [item for item in batch if item is not None]
     item, ref, idx = zip(*batch)
 
-    return item, ref, idx
+    return list(item), list(ref), list(idx)
 
 
 if __name__ == "__main__":
@@ -130,10 +130,11 @@ if __name__ == "__main__":
     from transformers import AutoProcessor
 
     processor = AutoProcessor.from_pretrained(model_path)
-    dataloader = get_dataloader(audio_path, batch_size=32, num_workers=16, shuffle=False, return_type='feature', processor=processor)
+    dataloader = get_dataloader(audio_path, batch_size=32, num_workers=16, shuffle=False, return_type='dict', processor=processor)
 
     for batch in tqdm(dataloader):
         data, ref, idx = batch
+        print(data)
 
 
 

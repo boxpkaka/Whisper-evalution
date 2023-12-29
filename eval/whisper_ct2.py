@@ -68,6 +68,6 @@ def eval_faster_whisper(
                                            f'used memory: {memory_used} '
                                            f'cpu usage: {cpu_usage}')
 
-    export_dir += f'-{device}-{compute_type}'
+    export_dir += f'_{device}_{compute_type}'
     save_eval(export_dir, monitor.refs, monitor.trans, monitor.trans_with_info)
 

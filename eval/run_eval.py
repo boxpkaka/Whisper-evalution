@@ -35,6 +35,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_bettertransformer',  help='pipeline options',           type=int)
     parser.add_argument('--use_compile',            help='pipeline options',           type=int)
     parser.add_argument('--assistant_model_path',   help='pipeline options',           type=str)
+    parser.add_argument('--preheat',                help='whether preheat first',      type=int)
     parser.add_argument('--gpu',     default=0,     help='gpu id',                     type=str)
     args = parser.parse_args()
 
