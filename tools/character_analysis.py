@@ -61,4 +61,5 @@ if __name__ == "__main__":
     items = get_file(path)
     is_wenet = True if path.split('/')[-1] == 'text' else False
     result = analysis(items, is_wenet)
-    print(result)
+    for i in result:
+        print(i)

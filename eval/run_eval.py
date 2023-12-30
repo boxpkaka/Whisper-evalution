@@ -19,7 +19,7 @@ def eval_whisper(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='eval whisper')
-    parser.add_argument('--config',                 help='config path'  ,              type=str)
+    parser.add_argument('--config',                 help='config path',                type=str)
     parser.add_argument('--model_type',             help='type of model',              type=str)
     parser.add_argument('--model_index',            help='index of model list',        type=int)
     parser.add_argument('--lora_dir', default=None, help='directory of LoRA file',     type=str)
