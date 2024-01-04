@@ -1,3 +1,4 @@
+from ast import List
 import torch
 import os
 import pynvml
@@ -17,14 +18,23 @@ from utils import (
 from model.get_model import load_hf_whisper, load_hf_processor
 
 
-def save_eval(export_dir, refs, trans, trans_with_time=None):
+def norm_eval(export_dir: str) -> None:
+    normalize_cantonese(export_dir)
+    eval_with_trn(export_dir)
+
+
+def save_eval(
+        export_dir: str,
+        refs: List, 
+        trans: List, 
+        trans_with_time=None) -> None:
+    
     os.makedirs(export_dir, exist_ok=True)
     save_file(os.path.join(export_dir, 'std_orig.trn'), refs)
     save_file(os.path.join(export_dir, 'reg_orig.trn'), trans)
     if trans_with_time is not None:
         save_file(os.path.join(export_dir, 'reg_rtf.trn'), trans_with_time)
-    normalize_cantonese(export_dir)
-    eval_with_trn(export_dir)
+    norm_eval(export_dir=export_dir)
 
 
 def eval_whisper_huggingface(

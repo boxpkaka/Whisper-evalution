@@ -4,7 +4,7 @@ import random
 from tqdm import tqdm
 
 from utils import get_file, save_file
-from local.character_analysis import analysis
+from tools.character_analysis import analysis
 
 '''
 extract audio with certain duration in random order from wav.scp / text 
@@ -28,6 +28,7 @@ def extract_save(root_dir: str, duration: float, tgt_dir: str):
     cnt_1_10 = 0
     cnt_10_20 = 0
     cnt_20_30 = 0
+    cnt_30 = 0
     # extract -> idx_dict: {idx: [text]}
     print('Extracting...')
     pbar = tqdm(total=duration)
@@ -38,6 +39,8 @@ def extract_save(root_dir: str, duration: float, tgt_dir: str):
             continue
 
         idx = item[0]
+        # if 'wenetspeech' in idx:
+        #     continue
         text = ''.join(item[1:])
 
         bg, ed, _ = idx.split('-')[-3:]
@@ -46,14 +49,16 @@ def extract_save(root_dir: str, duration: float, tgt_dir: str):
         ed = float(ed) * 0.001
         tmp = ed - bg
         # filter
-        if tmp < 1 or tmp > 30:
+        if tmp < 1:
             continue
         elif 1 <= tmp < 10:
             cnt_1_10 += 1
         elif 10 <= tmp < 20:
             cnt_10_20 += 1
-        else:
+        elif 20< tmp <= 30:
             cnt_20_30 += 1
+        else:
+            cnt_30 += 1
         total_duration += tmp
         pbar.update(tmp)
         if total_duration >= duration:
@@ -70,11 +75,13 @@ def extract_save(root_dir: str, duration: float, tgt_dir: str):
             tgt_txt.append(f'{idx} {idx_dict[idx]}')
 
     os.makedirs(tgt_dir, exist_ok=True)
-    analysis_result = analysis(tgt_txt, is_wenet=True)
+    analysis_result = []
+    # analysis_result = analysis(tgt_txt, is_wenet=True)
     analysis_result.append(f'Duration distribution:')
     analysis_result.append(f'1-10: {cnt_1_10}')
     analysis_result.append(f'10-20: {cnt_10_20}')
     analysis_result.append(f'20-30: {cnt_20_30}')
+    analysis_result.append(f' > 30: {cnt_30}')
     save_file(os.path.join(tgt_dir, 'wav.scp'), tgt_wav)
     save_file(os.path.join(tgt_dir, 'text'), tgt_txt)
     save_file(os.path.join(tgt_dir, 'analysis.trn'), analysis_result)

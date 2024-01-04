@@ -9,9 +9,8 @@ from utils.get_save_file import get_file, save_file
 
 def main():
     root_dir = sys.argv[1]  # root dir/wav.scp|text|text.fmt
-    data_tgt_dir = sys.argv[2]  # data_tgt_dir/1.wav, ..., x.wav
-    export_dir = sys.argv[3] if len(sys.argv) > 3 else root_dir
-    generate(root_dir, export_dir, data_tgt_dir)
+    data_tgt_dir = sys.argv[2]
+    generate(root_dir, root_dir, data_tgt_dir)
 
 
 def generate(root_dir: str, export_dir: str, data_tgt_dir: str) -> None:

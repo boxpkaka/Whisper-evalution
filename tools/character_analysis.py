@@ -2,7 +2,7 @@ import sys
 import opencc
 from jiwer import cer
 from typing import List
-from utils import get_file
+from utils.get_save_file import get_file
 
 '''
 对text和转录(.trn)文本进行中文简繁统计分析(CER)
