@@ -2,7 +2,7 @@
 __pycache__/
 exp/
 eval/__pycache__
-test.py
+*test.py
 *.sh
 model_data_list.json
 accelerate_config.yaml
