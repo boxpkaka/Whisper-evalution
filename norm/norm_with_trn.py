@@ -3,7 +3,6 @@ import re
 import opencc
 from .num2char import num_to_char
 import multiprocessing
-from tqdm import tqdm
 from utils import get_file, save_file
 
 '''
@@ -31,7 +30,7 @@ def norm_single_sentence(sentence: str) -> str:
 def single_normalization(args):
     trans, refs, start, end = args
     trans_result, refs_result = [], []
-    for i in tqdm(range(start, end)):
+    for i in range(start, end):
         trans_s = trans[i].strip().split('(')
         refs_s = refs[i].strip().split('(')
 
@@ -68,7 +67,7 @@ def normalize_cantonese(path: str) -> None:
     save_file(os.path.join(path, 'reg.trn'), final_trans)
     save_file(os.path.join(path, 'std.trn'), final_refs)
 
-    print(path + ' done!')
+    print(path + ' done')
 
 
 if __name__ == '__main__':

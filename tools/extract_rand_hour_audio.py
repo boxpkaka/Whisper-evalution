@@ -4,7 +4,6 @@ import random
 from tqdm import tqdm
 
 from utils import get_file, save_file
-from tools.character_analysis import analysis
 
 '''
 extract audio with certain duration in random order from wav.scp / text 
@@ -39,9 +38,17 @@ def extract_save(root_dir: str, duration: float, tgt_dir: str):
             continue
 
         idx = item[0]
-        # if 'wenetspeech' in idx:
-        #     continue
         text = ''.join(item[1:])
+
+        # filter
+        cnt = 0
+        for char in text:
+            if char in '一二三四五六七八九十':
+                cnt += 1
+        if len(text) > 6:
+            continue
+        if cnt / len(text) < 0.6:
+            continue
 
         bg, ed, _ = idx.split('-')[-3:]
 
@@ -58,13 +65,15 @@ def extract_save(root_dir: str, duration: float, tgt_dir: str):
         elif 20< tmp <= 30:
             cnt_20_30 += 1
         else:
-            cnt_30 += 1
+            continue
         total_duration += tmp
         pbar.update(tmp)
         if total_duration >= duration:
             break
 
         idx_dict[idx] = text
+
+    print(f'extract duration: {total_duration / 3600}')
 
     # get corresponding audio path -> idx_dict: {idx: [text, path]}
     print('Writing...')
@@ -92,6 +101,9 @@ def mian():
     root_dir = sys.argv[1]
     duration = float(sys.argv[2])
     tgt_dir = sys.argv[3]
+    print(f'from:  {root_dir}')
+    print(f'to:    {tgt_dir}')
+    print(f'hours: {duration}')
     extract_save(root_dir, duration, tgt_dir)
 
 

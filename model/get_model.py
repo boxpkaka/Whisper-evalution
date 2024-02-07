@@ -1,6 +1,6 @@
 import platform
 import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, AutoModelForCausalLM
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, AutoModelForCausalLM, WhisperTokenizer
 
 
 def load_hf_whisper(path: str, use_flash_attention_2=False, torch_dtype=torch.float32):

@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import torch
 import librosa
 import soundfile
@@ -13,10 +14,10 @@ def infer_hf(
         model_path: str,
         audio_path: List,
         device: torch.device,
-        timestamp: bool,
+        timestamp=False,
         language=None) -> None:
 
-    model = load_hf_whisper(path=model_path, use_flash_attention_2=True, torch_dtype=torch.bfloat16).to(device)
+    model = load_hf_whisper(path=model_path, use_flash_attention_2=False, torch_dtype=torch.float32).to(device)
     processor = load_hf_processor(model_path)
 
     for i in audio_path:
@@ -39,11 +40,9 @@ def infer_hf(
             else:
                 chunked_wav = wav[j * 480000: (j+1) * 480000]
 
-            features = processor(chunked_wav, sampling_rate=sr, return_tensors="pt").input_features.to(torch.bfloat16)
+            features = processor(chunked_wav, sampling_rate=sr, return_tensors="pt").input_features
             predicted_ids = model.generate(input_features=features.to(device), **generate_kwargs)
-            print(predicted_ids)
-            result = processor.batch_decode(predicted_ids, skip_special_tokens=True, decode_with_timestamps=False)[0]
-            print(result)
+            result = processor.batch_decode(predicted_ids, skip_special_tokens=False, decode_with_timestamps=False)[0]
             matches = PATTERN.findall(result)
             for item in matches:
                 bg, text, ed = item
@@ -55,13 +54,10 @@ def infer_hf(
 
 
 if __name__ == '__main__':
-    model_path = '/data1/yumingdong/whisper/Whisper-Finetune/models/whisper-large-v3-finetune'
-    # model_path = '/data1/yumingdong/model/huggingface/whisper-large-v3'
-    audio_path = ['/data2/yumingdong/wavs/cantonese/wavs/dev/datatang500h00000818-0754561-0756330-C1.wav',
-                  '/data2/yumingdong/wavs/cantonese/wavs/dev/datatang500h00000822-0678688-0690173-C0.wav',
-                  '/data2/yumingdong/wavs/data_aishell/data_aishell/wav/train/S0057/BAC009S0057W0495.wav',
-                  '/data2/yumingdong/wavs/data_aishell/data_aishell/wav/train/S0057/BAC009S0057W0430.wav']
+    model_dir = sys.argv[1]
+    # model_path = '/data1/yumingdong/model/finetuned/whisper-large-v3-lora700+700-130000'
+    audio_path = sys.argv[2]
 
     device = torch.device('cuda:0')
 
-    infer_hf(model_path, audio_path, device, timestamp=False)
+    infer_hf(model_dir, [audio_path], device, timestamp=False, language='zh')

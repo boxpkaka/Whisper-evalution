@@ -1,4 +1,5 @@
 import os
+import sys
 import torch
 import whisper
 from typing import List
@@ -26,13 +27,8 @@ def infer_openai(model_path: str, audio_path: List, language: str, device: torch
 
 
 if __name__ == '__main__':
-    model_path = '/data1/yumingdong/model/openai/whisper-large-v3-lora50+50/model.pt'
-    audio_path = ['I905910667_A00001050053062779_02062833415_15627869180_103820_4bfd.wav',
-                  'I905910747_A00001050053062779_02062833415_15627869180_161117_4c51.wav',
-                  'I905910669_A00001050053062779_02062833415_15627869180_104031_4bff.wav',
-                  'I905910749_A00001050053062779_02062833415_15627869180_161252_4c53.wav'
-                  ]
-    audio_path = [os.path.join('/data1/yumingdong/test/', x) for x in audio_path]
+    model_path = sys.argv[1]
+    audio_path = sys.argv[2]
     device = torch.device('cuda:7')
 
-    infer_openai(model_path, audio_path, 'yue', device)
+    infer_openai(model_path, [audio_path], 'yue', device)

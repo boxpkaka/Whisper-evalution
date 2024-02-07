@@ -27,5 +27,6 @@ def eval_with_trn(path):
 
 
 if __name__ == '__main__':
-    eval_with_trn('/data1/yumingdong/whisper/whisper-eval/exp/whisper-large-v3-lora700+700-90000-test_datatang500h')
+    eval_dir = sys.argv[1]
+    eval_with_trn(eval_dir)
 
